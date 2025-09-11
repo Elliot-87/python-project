@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Django Fullstack Simplified</title>
+</head>
+<body>
+  <h1>Frontend served by Django 🎉</h1>
+  <button id="btn">Talk to Backend</button>
+  <p id="output"></p>
+
+  <script>
+    document.getElementById("btn").addEventListener("click", () => {
+      fetch("/api/hello/")   // 👈 same origin, no CORS
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("output").textContent = data.message;
+        })
+        .catch(err => console.error("Error:", err));
+    });
+  </script>
+</body>
+</html>

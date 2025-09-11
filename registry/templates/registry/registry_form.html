@@ -1,0 +1,36 @@
+<!-- registry/templates/registry/registry_form.html -->
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% if form.instance.pk %}Edit Entry{% else %}Add Entry{% endif %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-5xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4">{% if form.instance.pk %}Edit Entry{% else %}Add Entry{% endif %}</h1>
+    
+    <form method="POST" class="space-y-4">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for field in form %}
+          <div class="flex flex-col">
+            <label class="font-semibold mb-1">{{ field.label }}</label>
+            {{ field|add_class:"border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" }}
+            {% if field.errors %}
+              <span class="text-red-500 text-sm">{{ field.errors }}</span>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="flex justify-between mt-6">
+        <a href="{% url 'registry_list' %}" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</a>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          {% if form.instance.pk %}Update{% else %}Save{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

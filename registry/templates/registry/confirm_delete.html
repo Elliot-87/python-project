@@ -1,0 +1,33 @@
+<!-- registry/templates/registry/registry_confirm_delete.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirm Delete Entry</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4 text-red-600">Confirm Deletion</h1>
+    <p class="mb-4 text-gray-700">
+      Are you sure you want to delete the following entry? This action <span class="font-semibold text-red-500">cannot be undone</span>.
+    </p>
+
+    <div class="bg-gray-50 p-4 rounded border mb-6">
+      <p><span class="font-semibold">Names:</span> {{ entry.names }}</p>
+      <p><span class="font-semibold">Surname:</span> {{ entry.surname }}</p>
+      <p><span class="font-semibold">ID No./Age/DOB:</span> {{ entry.id_no_or_dob }}</p>
+      <p><span class="font-semibold">Gender:</span> {{ entry.gender }}</p>
+      <p><span class="font-semibold">TISH Area:</span> {{ entry.tish_area }}</p>
+      <p><span class="font-semibold">Ward No:</span> {{ entry.ward_no }}</p>
+      <p><span class="font-semibold">Contact Number:</span> {{ entry.contact_number }}</p>
+    </div>
+
+    <form method="POST" class="flex justify-between">
+      {% csrf_token %}
+      <a href="{% url 'registry_list' %}" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</a>
+      <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Confirm Delete</button>
+    </form>
+  </div>
+</body>
+</html>

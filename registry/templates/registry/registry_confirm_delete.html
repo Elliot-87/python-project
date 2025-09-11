@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirm Delete</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <main class="flex items-center justify-center h-screen">
+    <div class="bg-white shadow-lg rounded-xl p-8 w-full max-w-md text-center">
+      <h1 class="text-xl font-bold mb-4">Confirm Delete</h1>
+      <p class="mb-6">
+        Are you sure you want to delete <span class="font-semibold">{{ entry.names }} {{ entry.surname }}</span> from the registry?
+      </p>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="flex justify-center gap-4">
+          <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700">
+            ❌ Delete
+          </button>
+          <a href="{% url 'registry_list' %}" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg shadow hover:bg-gray-400">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+</body>
+</html>
