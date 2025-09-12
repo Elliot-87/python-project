@@ -3,191 +3,899 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Registry List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registry Management System</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4361ee',
+            secondary: '#3f37c9',
+            accent: '#4cc9f0',
+            light: '#f8f9fa',
+            dark: '#212529',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f5f7fb;
+    }
+    
+    .card {
+      transition: all 0.3s ease;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .summary-card {
+      border-left: 4px solid;
+    }
+    
+    .summary-card:nth-child(1) {
+      border-left-color: #4361ee;
+    }
+    
+    .summary-card:nth-child(2) {
+      border-left-color: #4cc9f0;
+    }
+    
+    .summary-card:nth-child(3) {
+      border-left-color: #3f37c9;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(to right, #4361ee, #3f37c9);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(to right, #3f37c9, #4361ee);
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(to right, #4cc9f0, #3a0ca3);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+      background: linear-gradient(to right, #3a0ca3, #4cc9f0);
+      transform: translateY(-2px);
+    }
+    
+    .table-container {
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+    
+    th, td {
+      padding: 0.75rem 1rem;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    
+    tr:hover {
+      background-color: #f1f5f9;
+    }
+    
+    .action-btn {
+      transition: all 0.2s ease;
+      border-radius: 6px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+    }
+    
+    .action-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    .filter-section {
+      background: linear-gradient(to right, #ffffff, #f8fafc);
+      border-radius: 12px;
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+    
+    .pagination-item {
+      padding: 0.5rem 0.75rem;
+      margin: 0 0.25rem;
+      border-radius: 6px;
+      background-color: white;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s ease;
+    }
+    
+    .pagination-item:hover, .pagination-item.active {
+      background-color: #4361ee;
+      color: white;
+    }
+    
+    @media (max-width: 768px) {
+      .summary-grid {
+        grid-template-columns: 1fr !important;
+      }
+      
+      .filter-grid {
+        grid-template-columns: 1fr !important;
+      }
+      
+      .table-container {
+        overflow-x: auto;
+      }
+      
+      table {
+        min-width: 1000px;
+      }
+    }
+  </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
   <!-- Header -->
-  <header class="bg-white shadow p-6 flex justify-between items-center">
-    <h1 class="text-2xl font-bold">Registry Entries</h1>
-    <div class="space-x-3">
+  <header class="bg-white shadow-md p-4 md:p-6 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+    <div class="flex items-center gap-3">
+          <!-- Company Logo - Replace with your actual logo -->
+          <div class="bg-primary rounded-lg p-2 flex items-center justify-center">
+            <div class="flex-shrink-0 flex items-center">
+                <h1 class="text-xl font-bold text-white">BCS</h1>
+            </div>
+            
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-gray-800">Community Management System</h1>
+            <p class="text-xs text-gray-600">Empowering communities through technology</p>
+          </div>
+        </div>
+    <div class="flex flex-wrap gap-3">
       <a href="{% url 'registry_create' %}" 
-         class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">
-        ➕ Add New Entry
+         class="btn-primary px-4 py-2 text-white rounded-lg shadow-md flex items-center justify-center gap-2">
+        <i class="fas fa-plus-circle"></i>
+        <span>Add New Entry</span>
       </a>
       <a href="{% url 'export_pdf' %}" 
-         class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">
-        ⬇ Export PDF
+         class="btn-secondary px-4 py-2 text-white rounded-lg shadow-md flex items-center justify-center gap-2">
+        <i class="fas fa-file-pdf"></i>
+        <span>Export PDF</span>
       </a>
     </div>
   </header>
 
-  <main class="p-6">
+  <main class="p-4 md:p-6">
 
-    <!-- Summary Cards -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <!-- Gender Summary -->
-      <div class="bg-white shadow rounded-xl p-4">
-        <h2 class="font-semibold text-lg mb-3">Gender Summary</h2>
-        <ul class="space-y-1 text-sm">
-          {% for gender, count in gender_counts.items %}
-            <li class="flex justify-between">
-              <span>{{ gender }}</span>
-              <span class="font-bold">{{ count }}</span>
-            </li>
-          {% empty %}
-            <li>No data</li>
-          {% endfor %}
-        </ul>
-      </div>
 
-      <!-- Grant Summary -->
-      <div class="bg-white shadow rounded-xl p-4">
-        <h2 class="font-semibold text-lg mb-3">Grant Summary</h2>
-        <ul class="space-y-1 text-sm">
-          {% for grant, count in grant_counts.items %}
-            <li class="flex justify-between">
-              <span>{{ grant }}</span>
-              <span class="font-bold">{{ count }}</span>
-            </li>
-          {% empty %}
-            <li>No data</li>
-          {% endfor %}
-        </ul>
-      </div>
-
-      <!-- TISH Summary -->
-      <div class="bg-white shadow rounded-xl p-4">
-        <h2 class="font-semibold text-lg mb-3">TISH Summary</h2>
-        <ul class="space-y-1 text-sm">
-          {% for area, count in tish_counts.items %}
-            <li class="flex justify-between">
-              <span>{{ area }}</span>
-              <span class="font-bold">{{ count }}</span>
-            </li>
-          {% empty %}
-            <li>No data</li>
-          {% endfor %}
-        </ul>
-      </div>
-    </section>
 
     <!-- Search + Filters -->
-    <section class="bg-white shadow rounded-xl p-4 mb-6">
-      <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+    <section class="filter-section shadow-md rounded-xl p-5 mb-6">
+      <h2 class="font-semibold text-lg mb-4 flex items-center gap-2">
+        <i class="fas fa-filter text-primary"></i>
+        <span>Filter Entries</span>
+      </h2>
+      <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end filter-grid">
         
         <!-- Search -->
-        <div class="col-span-2">
-          <label for="search" class="block text-sm font-medium text-gray-600">Search</label>
-          <input type="text" id="search" name="search" value="{{ request.GET.search }}" 
-                 placeholder="Search by name, surname, or ID..."
-                 class="w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        <div class="md:col-span-2">
+          <label for="search" class="block text-sm font-medium text-gray-600 mb-1">Search</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-search text-gray-400"></i>
+            </div>
+            <input type="text" id="search" name="search" value="{{ request.GET.search }}" 
+                   placeholder="Search by name, surname, or ID..."
+                   class="w-full pl-10 mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent">
+          </div>
         </div>
 
         <!-- Gender Filter -->
         <div>
-          <label for="gender" class="block text-sm font-medium text-gray-600">Gender</label>
-          <select id="gender" name="gender" class="w-full mt-1 border rounded-lg px-3 py-2 text-sm">
-            <option value="">All</option>
-            <option value="Male" {% if request.GET.gender == "Male" %}selected{% endif %}>Male</option>
-            <option value="Female" {% if request.GET.gender == "Female" %}selected{% endif %}>Female</option>
-          </select>
+          <label for="gender" class="block text-sm font-medium text-gray-600 mb-1">Gender</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-venus-mars text-gray-400"></i>
+            </div>
+            <select id="gender" name="gender" class="w-full pl-10 mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent">
+              <option value="">All Genders</option>
+              <option value="Male" {% if request.GET.gender == "Male" %}selected{% endif %}>Male</option>
+              <option value="Female" {% if request.GET.gender == "Female" %}selected{% endif %}>Female</option>
+            </select>
+          </div>
         </div>
 
         <!-- Grant Filter -->
         <div>
-          <label for="grant" class="block text-sm font-medium text-gray-600">Grant</label>
-          <select id="grant" name="grant" class="w-full mt-1 border rounded-lg px-3 py-2 text-sm">
-            <option value="">All</option>
-            {% for grant, _ in grant_counts.items %}
-              <option value="{{ grant }}" {% if request.GET.grant == grant %}selected{% endif %}>{{ grant }}</option>
-            {% endfor %}
-          </select>
+          <label for="grant" class="block text-sm font-medium text-gray-600 mb-1">Grant</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-award text-gray-400"></i>
+            </div>
+            <select id="grant" name="grant" class="w-full pl-10 mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent">
+              <option value="">All Grants</option>
+              {% for grant, _ in grant_counts.items %}
+                <option value="{{ grant }}" {% if request.GET.grant == grant %}selected{% endif %}>{{ grant }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
 
         <!-- TISH Filter -->
         <div>
-          <label for="tish_area" class="block text-sm font-medium text-gray-600">TISH Area</label>
-          <select id="tish_area" name="tish_area" class="w-full mt-1 border rounded-lg px-3 py-2 text-sm">
-            <option value="">All</option>
-            {% for area, _ in tish_counts.items %}
-              <option value="{{ area }}" {% if request.GET.tish_area == area %}selected{% endif %}>{{ area }}</option>
-            {% endfor %}
-          </select>
+          <label for="tish_area" class="block text-sm font-medium text-gray-600 mb-1">TISH Area</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-map-marker-alt text-gray-400"></i>
+            </div>
+            <select id="tish_area" name="tish_area" class="w-full pl-10 mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent">
+              <option value="">All Areas</option>
+              {% for area, _ in tish_counts.items %}
+                <option value="{{ area }}" {% if request.GET.tish_area == area %}selected{% endif %}>{{ area }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
 
         <!-- Buttons -->
-        <div class="flex space-x-2">
+        <div class="flex flex-col md:flex-row gap-2 md:col-span-5 mt-2">
           <button type="submit" 
-                  class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">
-            🔍 Apply
+                  class="btn-primary px-4 py-2.5 text-white rounded-lg shadow-md flex items-center justify-center gap-2">
+            <i class="fas fa-filter"></i>
+            <span>Apply Filters</span>
           </button>
           <a href="{% url 'registry_list' %}" 
-             class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg shadow hover:bg-gray-400">
-            ❌ Reset
+             class="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg shadow-md hover:bg-gray-300 transition-all flex items-center justify-center gap-2">
+            <i class="fas fa-redo"></i>
+            <span>Reset Filters</span>
           </a>
         </div>
       </form>
     </section>
 
-    <!-- Registry Table -->
-    <div class="overflow-x-auto bg-white shadow rounded-xl">
-      <table class="min-w-full border-collapse">
-        <thead class="bg-gray-100 text-xs uppercase text-gray-600">
-          <tr>
-            <th class="border px-3 py-2">No.</th>
-            <th class="border px-3 py-2">Names</th>
-            <th class="border px-3 py-2">Surname</th>
-            <th class="border px-3 py-2">ID No./DoB</th>
-            <th class="border px-3 py-2">Gender</th>
-            <th class="border px-3 py-2">Disability</th>
-            <th class="border px-3 py-2">Address</th>
-            <th class="border px-3 py-2">TISH Area</th>
-            <th class="border px-3 py-2">Ward</th>
-            <th class="border px-3 py-2">Contact</th>
-            <th class="border px-3 py-2">Race</th>
-            <th class="border px-3 py-2">Recovering</th>
-            <th class="border px-3 py-2">Grant</th>
-            <th class="border px-3 py-2">Cooperative</th>
-            <th class="border px-3 py-2">Sign</th>
-            <th class="border px-3 py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="text-sm">
-          {% for entry in entries %}
-          <tr class="hover:bg-gray-50">
-            <td class="border px-3 py-2 text-center">{{ forloop.counter }}</td>
-            <td class="border px-3 py-2">{{ entry.names }}</td>
-            <td class="border px-3 py-2">{{ entry.surname }}</td>
-            <td class="border px-3 py-2">{{ entry.id_no_or_dob }}</td>
-            <td class="border px-3 py-2">{{ entry.gender }}</td>
-            <td class="border px-3 py-2 text-center">{{ entry.disability|yesno:"Yes,No" }}</td>
-            <td class="border px-3 py-2">{{ entry.physical_address }}</td>
-            <td class="border px-3 py-2">{{ entry.tish_area }}</td>
-            <td class="border px-3 py-2">{{ entry.ward_no }}</td>
-            <td class="border px-3 py-2">{{ entry.contact_number }}</td>
-            <td class="border px-3 py-2">{{ entry.race }}</td>
-            <td class="border px-3 py-2 text-center">{{ entry.recovering_service_user|yesno:"Yes,No" }}</td>
-            <td class="border px-3 py-2">{{ entry.social_grant }}</td>
-            <td class="border px-3 py-2 text-center">{{ entry.cooperative_member|yesno:"Yes,No" }}</td>
-            <td class="border px-3 py-2">{{ entry.sign }}</td>
-            <td class="border px-3 py-2 text-center space-x-2">
-              <a href="{% url 'registry_update' entry.pk %}" 
-                 class="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs">Edit</a>
-              <a href="{% url 'registry_delete' entry.pk %}" 
-                 class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs">Delete</a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="16" class="text-center py-6">No entries found.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <!-- Results Count -->
+    <div class="mb-4 flex justify-between items-center">
+      <p class="text-sm text-gray-600">
+        Showing <span class="font-semibold">{{ entries|length }}</span> 
+        entr{{ entries|length|pluralize:"y,ies" }}
+      </p>
+      
+      <!-- Export Options -->
+      <div class="flex gap-2">
+        <a href="#" class="text-sm text-primary hover:text-secondary flex items-center gap-1">
+          <i class="fas fa-download"></i>
+          <span>Export Data</span>
+        </a>
+      </div>
     </div>
 
+    <!-- Registry Table -->
+    <div class="table-container bg-white shadow-md rounded-xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead class="bg-gray-100 text-xs text-gray-600">
+            <tr>
+              <th class="px-4 py-3 text-left">No.</th>
+              <th class="px-4 py-3 text-left">Names</th>
+              <th class="px-4 py-3 text-left">Surname</th>
+              <th class="px-4 py-3 text-left">ID No./DoB</th>
+              <th class="px-4 py-3 text-left">Gender</th>
+              <th class="px-4 py-3 text-center">Disability</th>
+              <th class="px-4 py-3 text-left">Address</th>
+              <th class="px-4 py-3 text-left">TISH Area</th>
+              <th class="px-4 py-3 text-left">Ward</th>
+              <th class="px-4 py-3 text-left">Contact</th>
+              <th class="px-4 py-3 text-left">Race</th>
+              <th class="px-4 py-3 text-center">Recovering</th>
+              <th class="px-4 py-3 text-left">Grant</th>
+              <th class="px-4 py-3 text-center">Cooperative</th>
+              <th class="px-4 py-3 text-left">Sign</th>
+              <th class="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm divide-y divide-gray-200">
+            {% for entry in entries %}
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-4 py-3">{{ forloop.counter }}</td>
+              <td class="px-4 py-3 font-medium">{{ entry.names }}</td>
+              <td class="px-4 py-3">{{ entry.surname }}</td>
+              <td class="px-4 py-3">{{ entry.id_no_or_dob }}</td>
+              <td class="px-4 py-3">
+                <span class="px-2 py-1 rounded-full text-xs 
+                  {% if entry.gender == 'Male' %}bg-blue-100 text-blue-800{% endif %}
+                  {% if entry.gender == 'Female' %}bg-pink-100 text-pink-800{% endif %}">
+                  {{ entry.gender }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full 
+                  {% if entry.disability %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                  <i class="fas {% if entry.disability %}fa-times{% else %}fa-check{% endif %} text-xs"></i>
+                </span>
+              </td>
+              <td class="px-4 py-3">{{ entry.physical_address|truncatewords:3 }}</td>
+              <td class="px-4 py-3">{{ entry.tish_area }}</td>
+              <td class="px-4 py-3">{{ entry.ward_no }}</td>
+              <td class="px-4 py-3">{{ entry.contact_number }}</td>
+              <td class="px-4 py-3">{{ entry.race }}</td>
+              <td class="px-4 py-3 text-center">
+                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full 
+                  {% if entry.recovering_service_user %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                  <i class="fas {% if entry.recovering_service_user %}fa-check{% else %}fa-times{% endif %} text-xs"></i>
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                  {{ entry.social_grant }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full 
+                  {% if entry.cooperative_member %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                  <i class="fas {% if entry.cooperative_member %}fa-check{% else %}fa-times{% endif %} text-xs"></i>
+                </span>
+              </td>
+              <td class="px-4 py-3">{{ entry.sign }}</td>
+              <td class="px-4 py-3">
+                <div class="flex justify-center space-x-2">
+                  <a href="{% url 'registry_update' entry.pk %}" 
+                     class="action-btn bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a href="{% url 'registry_delete' entry.pk %}" 
+                     class="action-btn bg-red-100 text-red-800 hover:bg-red-200">
+                    <i class="fas fa-trash-alt"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="16" class="px-4 py-8 text-center text-gray-500">
+                <div class="flex flex-col items-center justify-center">
+                  <i class="fas fa-inbox text-4xl text-gray-300 mb-2"></i>
+                  <p>No entries found matching your criteria.</p>
+                  <a href="{% url 'registry_list' %}" class="text-primary hover:text-secondary mt-2 text-sm">
+                    Clear filters to see all entries
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if entries.has_other_pages %}
+    <div class="pagination mt-6">
+      {% if entries.has_previous %}
+        <a href="?page={{ entries.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="pagination-item">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+      {% endif %}
+      
+      {% for i in entries.paginator.page_range %}
+        {% if entries.number == i %}
+          <span class="pagination-item active">{{ i }}</span>
+        {% else %}
+          <a href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="pagination-item">{{ i }}</a>
+        {% endif %}
+      {% endfor %}
+      
+      {% if entries.has_next %}
+        <a href="?page={{ entries.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="pagination-item">
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
   </main>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Performance Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --accent: #06b6d4;
+            --secondary: #8b5cf6;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #e2e8f0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #3b82f6, #06b6d4, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .dashboard-header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .card {
+            background: linear-gradient(145deg, #1e293b, #334155);
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            padding: 1.5rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(to right, var(--card-color), transparent);
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            z-index: 2;
+            position: relative;
+        }
+        
+        .icon-wrapper {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card-title {
+            font-weight: 700;
+            font-size: 1.35rem;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        
+        .speedometer-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .speedometer-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .speed-value {
+            position: absolute;
+            top: 65%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.7);
+        }
+        
+        .speed-label {
+            position: absolute;
+            top: 80%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stats-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 1.2rem;
+        }
+        
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.7rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background-color 0.3s ease;
+        }
+        
+        .stats-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        
+        .stats-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .stat-value {
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 0.35rem 0.9rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .pulse {
+            display: inline-block;
+            width: 0.6rem;
+            height: 0.6rem;
+            border-radius: 50%;
+            margin-right: 0.7rem;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+            
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+            }
+            
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+        
+        .dashboard-footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .glow {
+            filter: drop-shadow(0 0 8px var(--card-glow));
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 1rem;
+            color: #94a3b8;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <h1>Data Performance Dashboard</h1>
+        <p>Real-time metrics visualized through animated speedometers</p>
+    </div>
+
+    <section class="grid">
+        <!-- Gender Summary -->
+        <div class="card" style="--card-color: #3b82f6; --card-glow: rgba(59, 130, 246, 0.7);">
+            <div class="card-header">
+                <div class="icon-wrapper" style="color: #3b82f6;">
+                    <i class="fas fa-venus-mars"></i>
+                </div>
+                <h2 class="card-title text-white">Gender Summary</h2>
+            </div>
+            <div class="speedometer-container">
+                <canvas id="gender-speedometer" class="speedometer-canvas"></canvas>
+                <div class="speed-value">0</div>
+                <div class="speed-label">Total Participants</div>
+            </div>
+            <ul class="stats-list" id="gender-stats">
+                <!-- Stats will be populated by JavaScript -->
+            </ul>
+        </div>
+
+        <!-- Grant Summary -->
+        <div class="card" style="--card-color: #06b6d4; --card-glow: rgba(6, 182, 212, 0.7);">
+            <div class="card-header">
+                <div class="icon-wrapper" style="color: #06b6d4;">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+                <h2 class="card-title text-white">Grant Summary</h2>
+            </div>
+            <div class="speedometer-container">
+                <canvas id="grant-speedometer" class="speedometer-canvas"></canvas>
+                <div class="speed-value">0</div>
+                <div class="speed-label">Total Grants</div>
+            </div>
+            <ul class="stats-list" id="grant-stats">
+                <!-- Stats will be populated by JavaScript -->
+            </ul>
+        </div>
+
+        <!-- TISH Summary -->
+        <div class="card" style="--card-color: #8b5cf6; --card-glow: rgba(139, 92, 246, 0.7);">
+            <div class="card-header">
+                <div class="icon-wrapper" style="color: #8b5cf6;">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <h2 class="card-title text-white">TISH Summary</h2>
+            </div>
+            <div class="speedometer-container">
+                <canvas id="tish-speedometer" class="speedometer-canvas"></canvas>
+                <div class="speed-value">0</div>
+                <div class="speed-label">Total Areas</div>
+            </div>
+            <ul class="stats-list" id="tish-stats">
+                <!-- Stats will be populated by JavaScript -->
+            </ul>
+        </div>
+    </section>
+
+    <div class="dashboard-footer">
+        <p>Data updated in real-time • Powered by AI-AbaNtu Intelligence</p>
+    </div>
+
+    <script>
+        // This would be your actual backend data
+        // Using the exact same structure as your template
+        // These variables would be replaced with your actual template variables
+        const gender_counts = {
+            'Male': 4,
+            'Female': 1
+        };
+        
+        const grant_counts = {
+            'None': 2,
+            'SRD': 2,
+            'Other': 1
+        };
+        
+        const tish_counts = {
+            'Turffontein': 3,
+            'Maboneng': 1,
+            'Booysens': 1
+        };
+        
+        // Function to create a speedometer
+        function createSpeedometer(canvasId, data, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const total = Object.values(data).reduce((sum, value) => sum + value, 0);
+            const maxValue = Math.max(5, ...Object.values(data)); // Ensure minimum scale for small numbers
+            
+            // Update the speed value display with counting animation
+            const speedValueElement = document.querySelector(`#${canvasId}`).parentNode.querySelector('.speed-value');
+            animateValue(speedValueElement, 0, total, 2000);
+            
+            // Create gradient for the speedometer
+            const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+            gradient.addColorStop(0, '#374151');
+            gradient.addColorStop(0.5, color);
+            gradient.addColorStop(1, color);
+            
+            // Calculate percentage for the speedometer
+            const percentage = (total / maxValue) * 100;
+            
+            // Draw speedometer
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [percentage, 100 - percentage], // Value and remaining
+                        backgroundColor: [gradient, '#1f2937'],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270,
+                        borderRadius: 10,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 2000,
+                        easing: 'easeOutBounce'
+                    }
+                }
+            });
+            
+            // Populate stats list
+            const statsElement = document.getElementById(`${canvasId.split('-')[0]}-stats`);
+            statsElement.innerHTML = '';
+            
+            if (Object.keys(data).length === 0) {
+                const li = document.createElement('li');
+                li.className = 'no-data';
+                li.textContent = 'No data available';
+                statsElement.appendChild(li);
+            } else {
+                for (const [label, value] of Object.entries(data)) {
+                    const li = document.createElement('li');
+                    li.className = 'stats-item';
+                    
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'stat-label';
+                    labelSpan.innerHTML = `<span class="pulse" style="background-color: ${color};"></span>${label}`;
+                    
+                    const valueSpan = document.createElement('span');
+                    valueSpan.className = 'stat-value';
+                    valueSpan.style.color = color;
+                    valueSpan.textContent = value;
+                    
+                    li.appendChild(labelSpan);
+                    li.appendChild(valueSpan);
+                    statsElement.appendChild(li);
+                }
+            }
+        }
+        
+        // Function to animate counting up
+        function animateValue(element, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                element.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+        
+        // Initialize speedometers when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add slight delay for dramatic effect
+            setTimeout(() => {
+                createSpeedometer('gender-speedometer', gender_counts, '#3b82f6');
+            }, 300);
+            
+            setTimeout(() => {
+                createSpeedometer('grant-speedometer', grant_counts, '#06b6d4');
+            }, 800);
+            
+            setTimeout(() => {
+                createSpeedometer('tish-speedometer', tish_counts, '#8b5cf6');
+            }, 1300);
+        });
+    </script>
+</body>
+</html>
+  <script>
+    // Simple JavaScript for better UX
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add loading state to buttons
+      const forms = document.querySelectorAll('form');
+      forms.forEach(form => {
+        form.addEventListener('submit', function() {
+          const submitBtn = this.querySelector('button[type="submit"]');
+          if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            submitBtn.disabled = true;
+          }
+        });
+      });
+      
+      // Add tooltips to action buttons
+      const editButtons = document.querySelectorAll('a[href*="update"]');
+      editButtons.forEach(btn => {
+        btn.setAttribute('title', 'Edit entry');
+      });
+      
+      const deleteButtons = document.querySelectorAll('a[href*="delete"]');
+      deleteButtons.forEach(btn => {
+        btn.setAttribute('title', 'Delete entry');
+      });
+    });
+  </script>
 </body>
 </html>
