@@ -5,6 +5,7 @@ from .models import RegistryEntry
 class RegistryForm(forms.ModelForm):
     class Meta:
         model = RegistryEntry
+        exclude = ['signature_data', 'signature_image']
         fields = [
             'names',
             'surname',
@@ -19,5 +20,5 @@ class RegistryForm(forms.ModelForm):
             'recovering_service_user',
             'social_grant',
             'cooperative_member',
-            'sign',
+            
         ]

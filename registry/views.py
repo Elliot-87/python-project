@@ -8,9 +8,129 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.platypus import Table, TableStyle
-
 from .models import RegistryEntry
 from .forms import RegistryForm
+import json
+import base64
+from io import BytesIO
+from django.core.files.base import ContentFile
+from PIL import Image, ImageDraw
+
+# Add this function to convert signature data to an image
+def signature_data_to_image(signature_data, output_size=(300, 100)):
+    """Convert signature data to an image"""
+    if not signature_data:
+        return None
+        
+    # Create a transparent image
+    img = Image.new('RGBA', output_size, (255, 255, 255, 0))
+    draw = ImageDraw.Draw(img)
+    
+    # Scale factor to fit the signature to output size
+    # First, find the bounds of the signature
+    all_x = [point['x'] for stroke in signature_data for point in stroke['points']]
+    all_y = [point['y'] for stroke in signature_data for point in stroke['points']]
+    
+    if not all_x or not all_y:
+        return None
+        
+    min_x, max_x = min(all_x), max(all_x)
+    min_y, max_y = min(all_y), max(all_y)
+    
+    width = max_x - min_x
+    height = max_y - min_y
+    
+    if width == 0 or height == 0:
+        return None
+        
+    scale_x = (output_size[0] - 10) / width
+    scale_y = (output_size[1] - 10) / height
+    scale = min(scale_x, scale_y)
+    
+    # Draw each stroke
+    for stroke in signature_data:
+        points = []
+        for point in stroke['points']:
+            x = (point['x'] - min_x) * scale + 5  # Add 5px margin
+            y = (point['y'] - min_y) * scale + 5
+            points.append((x, y))
+        
+        if len(points) > 1:
+            draw.line(points, fill='black', width=2)
+    
+    return img
+
+# Update your registry_create and registry_update views
+def registry_create(request):
+    if request.method == "POST":
+        form = RegistryForm(request.POST)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            
+            # Process signature data if provided
+            signature_data_json = request.POST.get('signature_data', '')
+            if signature_data_json:
+                try:
+                    signature_data = json.loads(signature_data_json)
+                    entry.signature_data = signature_data
+                    
+                    # Convert to image
+                    signature_img = signature_data_to_image(signature_data)
+                    if signature_img:
+                        # Save image to BytesIO buffer
+                        buffer = BytesIO()
+                        signature_img.save(buffer, format='PNG')
+                        
+                        # Save to ImageField
+                        entry.signature_image.save(
+                            f'signature_{entry.names}_{entry.surname}.png',
+                            ContentFile(buffer.getvalue()),
+                            save=False
+                        )
+                except json.JSONDecodeError:
+                    pass  # Invalid JSON, skip signature processing
+            
+            entry.save()
+            return redirect('registry_list')
+    else:
+        form = RegistryForm()
+    return render(request, 'registry/registry_form.html', {'form': form})
+
+def registry_update(request, pk):
+    entry = get_object_or_404(RegistryEntry, pk=pk)
+    if request.method == "POST":
+        form = RegistryForm(request.POST, instance=entry)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            
+            # Process signature data if provided
+            signature_data_json = request.POST.get('signature_data', '')
+            if signature_data_json:
+                try:
+                    signature_data = json.loads(signature_data_json)
+                    entry.signature_data = signature_data
+                    
+                    # Convert to image
+                    signature_img = signature_data_to_image(signature_data)
+                    if signature_img:
+                        # Save image to BytesIO buffer
+                        buffer = BytesIO()
+                        signature_img.save(buffer, format='PNG')
+                        
+                        # Save to ImageField
+                        entry.signature_image.save(
+                            f'signature_{entry.names}_{entry.surname}.png',
+                            ContentFile(buffer.getvalue()),
+                            save=False
+                        )
+                except json.JSONDecodeError:
+                    pass  # Invalid JSON, skip signature processing
+            
+            entry.save()
+            return redirect('registry_list')
+    else:
+        form = RegistryForm(instance=entry)
+    return render(request, 'registry/registry_form.html', {'form': form})
 
 
 # 1️⃣ Registry List with Search + Filter + Summaries
@@ -109,8 +229,10 @@ def export_pdf(request):
         "Cooperative", "Sign"
     ]
     table_data.append(headers)
-
     for i, entry in enumerate(entries, start=1):
+        # Check if entry has a signature image
+        signature_text = "Signed" if entry.signature_image else "Not signed"
+        
         row = [
             str(i),
             entry.names,
@@ -126,7 +248,7 @@ def export_pdf(request):
             "Yes" if entry.recovering_service_user else "No",
             entry.social_grant,
             "Yes" if entry.cooperative_member else "No",
-            entry.sign,
+            signature_text,  # Use this instead of entry.sign
         ]
         table_data.append(row)
 

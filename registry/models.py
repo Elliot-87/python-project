@@ -21,7 +21,8 @@ class RegistryEntry(models.Model):
         ('None', 'None'), ('CSG', 'CSG'), ('SRD', 'SRD'), ('Other', 'Other')
     ])
     cooperative_member = models.BooleanField(default=False)
-    sign = models.CharField(max_length=100)
+    signature_data = models.JSONField(null=True, blank=True)  # Stores drawing coordinates
+    signature_image = models.ImageField(upload_to='signatures/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.names} {self.surname}"
