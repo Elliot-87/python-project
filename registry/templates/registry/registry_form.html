@@ -1,4 +1,5 @@
 <!-- registry/templates/registry/registry_form.html -->
+{% load static %}
 {% load widget_tweaks %}
 <!DOCTYPE html>
 <html lang="en">
@@ -6,12 +7,14 @@
   <meta charset="UTF-8">
   <title>{% if form.instance.pk %}Edit Entry{% else %}Add Entry{% endif %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Include Signature Pad library -->
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 </head>
 <body class="bg-gray-100 p-6">
   <div class="max-w-5xl mx-auto bg-white p-6 rounded shadow">
     <h1 class="text-2xl font-bold mb-4">{% if form.instance.pk %}Edit Entry{% else %}Add Entry{% endif %}</h1>
     
-    <form method="POST" class="space-y-4">
+    <form method="POST" class="space-y-4" id="registryForm" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% for field in form %}
@@ -24,6 +27,33 @@
           </div>
         {% endfor %}
       </div>
+      
+      <!-- Signature Section -->
+      <div class="mt-6 border-t pt-4">
+        <h2 class="text-xl font-semibold mb-3">Signature</h2>
+        <p class="text-sm text-gray-600 mb-3">Please sign in the box below using your mouse or touchscreen</p>
+        
+        <div class="border rounded-lg p-4 bg-gray-50">
+          <canvas id="signatureCanvas" class="border rounded bg-white" width="600" height="200"></canvas>
+          
+          <div class="mt-3 flex space-x-2">
+            <button type="button" id="clearSignature" class="px-3 py-1 bg-red-500 text-white rounded text-sm">
+              Clear
+            </button>
+            <button type="button" id="undoSignature" class="px-3 py-1 bg-yellow-500 text-white rounded text-sm">
+              Undo
+            </button>
+          </div>
+          
+          <div class="mt-2 text-sm text-gray-500">
+            By signing, you confirm the information provided is accurate.
+          </div>
+        </div>
+        
+        <!-- Hidden field to store signature data -->
+        <input type="hidden" name="signature_data" id="signatureData">
+      </div>
+      
       <div class="flex justify-between mt-6">
         <a href="{% url 'registry_list' %}" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</a>
         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
@@ -32,5 +62,78 @@
       </div>
     </form>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const canvas = document.getElementById('signatureCanvas');
+      const signaturePad = new SignaturePad(canvas);
+      const signatureDataField = document.getElementById('signatureData');
+      const clearButton = document.getElementById('clearSignature');
+      const undoButton = document.getElementById('undoSignature');
+      const form = document.getElementById('registryForm');
+      
+      // Set up signature pad options
+      signaturePad.penColor = 'rgb(0, 0, 0)';
+      signaturePad.minWidth = 1;
+      signaturePad.maxWidth = 2;
+      
+      // Clear signature
+      clearButton.addEventListener('click', function() {
+        signaturePad.clear();
+        signatureDataField.value = '';
+      });
+      
+      // Undo last stroke
+      undoButton.addEventListener('click', function() {
+        const data = signaturePad.toData();
+        if (data) {
+          data.pop(); // remove the last dot or line
+          signaturePad.fromData(data);
+          signatureDataField.value = JSON.stringify(data);
+        }
+      });
+      
+      // Update hidden field when signature changes
+      canvas.addEventListener('mouseup', updateSignatureData);
+      canvas.addEventListener('touchend', updateSignatureData);
+      
+      function updateSignatureData() {
+        if (!signaturePad.isEmpty()) {
+          signatureDataField.value = JSON.stringify(signaturePad.toData());
+        }
+      }
+      
+      // Handle form submission
+      form.addEventListener('submit', function(e) {
+        if (signaturePad.isEmpty()) {
+          if (!confirm('You haven\'t provided a signature. Are you sure you want to submit without signing?')) {
+            e.preventDefault();
+            return false;
+          }
+        } else {
+          // Save the signature data
+          signatureDataField.value = JSON.stringify(signaturePad.toData());
+        }
+      });
+      
+      // If editing an existing entry with a signature, load it
+      {% if form.instance.signature_data %}
+        try {
+          const signatureData = {{ form.instance.signature_data|safe }};
+          signaturePad.fromData(signatureData);
+          signatureDataField.value = JSON.stringify(signatureData);
+        } catch (e) {
+          console.error('Error loading signature:', e);
+        }
+      {% endif %}
+    });
+  </script>
+  
+  <style>
+    #signatureCanvas {
+      touch-action: none; /* Prevents scrolling on touch devices while drawing */
+      cursor: crosshair;
+    }
+  </style>
 </body>
 </html>
