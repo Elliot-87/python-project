@@ -1,5 +1,7 @@
 # registry/models.py
 from django.db import models
+from django.utils import timezone
+
 
 class RegistryEntry(models.Model):
     names = models.CharField(max_length=100)
@@ -21,7 +23,15 @@ class RegistryEntry(models.Model):
         ('None', 'None'), ('CSG', 'CSG'), ('SRD', 'SRD'), ('Other', 'Other')
     ])
     cooperative_member = models.BooleanField(default=False)
-    sign = models.CharField(max_length=100)
+    signature_data = models.JSONField(null=True, blank=True)  # Stores drawing coordinates
+    signature_image = models.ImageField(upload_to='signatures/', null=True, blank=True) 
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def get_race_display(self):
+        return dict(self._meta.get_field('race').choices).get(self.race, self.race)
+    
+    def get_gender_display(self):
+        return dict(self._meta.get_field('gender').choices).get(self.gender, self.gender)
 
     def __str__(self):
         return f"{self.names} {self.surname}"

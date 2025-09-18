@@ -8,10 +8,199 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.platypus import Table, TableStyle
-
 from .models import RegistryEntry
 from .forms import RegistryForm
+import json
+from django.http import JsonResponse
+from .utils import signature_data_to_image
 
+def registry_view(request):
+    """Handle the registry form submission"""
+    if request.method == "POST":
+        form = RegistryForm(request.POST)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            
+            # MANUALLY process signature data
+            signature_data_json = request.POST.get('signature_data', '')
+            if signature_data_json:
+                try:
+                    signature_data = json.loads(signature_data_json)
+                    entry.signature_data = signature_data
+                    
+                    # Convert to image and save
+                    signature_img = signature_data_to_image(signature_data)
+                    if signature_img:
+                        # Save image logic here
+                        # Example: save signature image to a file or image field
+                        pass
+                        
+                except json.JSONDecodeError:
+                    # Handle JSON decode error
+                    pass
+            
+            entry.save()
+            
+            # Return success response or redirect
+            return redirect('success-page')  # or JsonResponse({'success': True})
+    
+    else:
+        form = RegistryForm()
+    
+    # For GET requests, render the form
+    return render(request, 'registry_form.html', {'form': form})
+
+# 1️⃣ Registry List with Search + Filter + Summaries
+def registry_list(request):
+    entries = RegistryEntry.objects.all()
+
+    # Get search/filter params
+    search = request.GET.get('search', '')
+    gender_filter = request.GET.get('gender', '')
+    grant_filter = request.GET.get('grant', '')
+    tish_filter = request.GET.get('tish_area', '')
+
+    # Apply search
+    if search:
+        entries = entries.filter(
+            Q(names__icontains=search) |
+            Q(surname__icontains=search) |
+            Q(id_no_or_dob__icontains=search)
+        )
+
+    # Apply filters
+    if gender_filter:
+        entries = entries.filter(gender=gender_filter)
+    if grant_filter:
+        entries = entries.filter(social_grant=grant_filter)
+    if tish_filter:
+        entries = entries.filter(tish_area=tish_filter)
+
+    # Generate summaries (guaranteed Counter dicts)
+    gender_counts = Counter([entry.gender for entry in entries])
+    grant_counts = Counter([entry.social_grant for entry in entries])
+    tish_counts = Counter([entry.tish_area for entry in entries])
+
+    context = {
+        'entries': entries,
+        'gender_counts': dict(gender_counts),  # convert to dict for template safety
+        'grant_counts': dict(grant_counts),
+        'tish_counts': dict(tish_counts),
+    }
+    return render(request, 'registry/registry_list.html', context)
+
+
+# 2️⃣ Create Entry
+def registry_create(request):
+    if request.method == "POST":
+        form = RegistryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('registry_list')
+    else:
+        form = RegistryForm()
+    return render(request, 'registry/registry_form.html', {'form': form})
+
+
+# 3️⃣ Update Entry
+def registry_update(request, pk):
+    entry = get_object_or_404(RegistryEntry, pk=pk)
+    if request.method == "POST":
+        form = RegistryForm(request.POST, instance=entry)
+        if form.is_valid():
+            form.save()
+            return redirect('registry_list')
+    else:
+        form = RegistryForm(instance=entry)
+    return render(request, 'registry/registry_form.html', {'form': form})
+
+
+# 4️⃣ Delete Entry
+def registry_delete(request, pk):
+    entry = get_object_or_404(RegistryEntry, pk=pk)
+    if request.method == "POST":
+        entry.delete()
+        return redirect('registry_list')
+    return render(request, 'registry/registry_confirm_delete.html', {'entry': entry})
+
+
+# 5️⃣ Export PDF (matches your Blueprint fields)
+# registry/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Q
+from collections import Counter
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.platypus import Table, TableStyle
+from .models import RegistryEntry
+from .forms import RegistryForm
+import json
+from django.http import JsonResponse
+from .utils import signature_data_to_image
+
+
+
+
+
+
+def dashboard_data(request):
+    entries = RegistryEntry.objects.all()
+    
+    gender_counts = dict(Counter([entry.gender for entry in entries]))
+    grant_counts = dict(Counter([entry.social_grant for entry in entries]))
+    tish_counts = dict(Counter([entry.tish_area for entry in entries]))
+
+    data = {
+        "gender_counts": gender_counts,
+        "grant_counts": grant_counts,
+        "tish_counts": tish_counts,
+    }
+    return JsonResponse(data)
+
+def dashboard(request):
+    entries = RegistryEntry.objects.all()
+    return render(request, 'registry/registry_dashboard.html', {'entries': entries})
+
+
+
+def registry_view(request):
+    """Handle the registry form submission"""
+    if request.method == "POST":
+        form = RegistryForm(request.POST)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            
+            # MANUALLY process signature data
+            signature_data_json = request.POST.get('signature_data', '')
+            if signature_data_json:
+                try:
+                    signature_data = json.loads(signature_data_json)
+                    entry.signature_data = signature_data
+                    
+                    # Convert to image and save
+                    signature_img = signature_data_to_image(signature_data)
+                    if signature_img:
+                        # Save image logic here
+                        # Example: save signature image to a file or image field
+                        pass
+                        
+                except json.JSONDecodeError:
+                    # Handle JSON decode error
+                    pass
+            
+            entry.save()
+            
+            # Return success response or redirect
+            return redirect('success-page')  # or JsonResponse({'success': True})
+    
+    else:
+        form = RegistryForm()
+    
+    # For GET requests, render the form
+    return render(request, 'registry_form.html', {'form': form})
 
 # 1️⃣ Registry List with Search + Filter + Summaries
 def registry_list(request):
@@ -162,3 +351,4 @@ def export_pdf(request):
     c.showPage()
     c.save()
     return response
+

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Data Performance Dashboard</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --accent: #06b6d4;
+      --secondary: #8b5cf6;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg,#0f172a,#1e293b);
+      color:#e2e8f0; padding:2rem; min-height:100vh;
+    }
+    .dashboard-header { text-align:center; margin-bottom:2.5rem; }
+    .dashboard-header h1 {
+      font-size:2.5rem; font-weight:800;
+      background: linear-gradient(to right,#3b82f6,#06b6d4,#8b5cf6);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      margin-bottom:.5rem; text-transform:uppercase; letter-spacing:1px;
+    }
+    .dashboard-header p { color:#94a3b8; font-size:1.05rem; }
+
+    .grid { display:grid; grid-template-columns:1fr; gap:2rem; max-width:1200px; margin:0 auto 2rem;}
+    @media(min-width:768px){ .grid{ grid-template-columns:repeat(3,1fr); } }
+
+    .card {
+      background: linear-gradient(145deg,#1e293b,#334155);
+      border-radius:1rem; padding:1.5rem;
+      border:1px solid rgba(255,255,255,0.08);
+      box-shadow:0 10px 25px -5px rgba(0,0,0,0.5);
+      position:relative; overflow:hidden; transition:all .35s ease;
+    }
+    .card::before{ content:''; position:absolute; top:0; left:0; width:100%; height:5px; background:linear-gradient(to right,var(--card-color),transparent); }
+    .card:hover{ transform:translateY(-8px); box-shadow:0 25px 50px -12px rgba(0,0,0,0.6); }
+
+    .card-header { display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem; z-index:2; position:relative; }
+    .icon-wrapper{ width:3.5rem; height:3.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.06); }
+    .card-title{ font-weight:700; font-size:1.25rem; margin:0; }
+
+    .speedometer-container{ position:relative; width:100%; height:200px; margin-bottom:1.1rem; }
+    .speedometer-canvas{ width:100%; height:100%; display:block; }
+    .speed-value{ position:absolute; top:65%; left:50%; transform:translate(-50%,-50%); font-size:2.2rem; font-weight:800; color:white; text-shadow:0 0 10px rgba(59,130,246,.6); }
+    .speed-label{ position:absolute; top:80%; left:50%; transform:translate(-50%,-50%); color:#94a3b8; font-size:.85rem; letter-spacing:1px; text-transform:uppercase; }
+
+    .stats-list{ list-style:none; padding:0; margin:0; border-top:1px solid rgba(255,255,255,0.06); padding-top:1rem; }
+    .stats-item{ display:flex; justify-content:space-between; align-items:center; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,0.04); transition:background .2s; }
+    .stats-item:hover{ background:rgba(255,255,255,0.02); border-radius:.4rem; padding-left:.5rem; padding-right:.5rem; }
+    .stat-label{ color:#cbd5e1; font-size:.95rem; display:flex; align-items:center; }
+    .stat-value{ font-weight:700; font-size:1rem; padding:.25rem .85rem; border-radius:1rem; background:rgba(255,255,255,0.06); }
+
+    .pulse{ display:inline-block; width:.6rem; height:.6rem; border-radius:50%; margin-right:.6rem; animation:pulse 1.5s infinite; }
+    @keyframes pulse{
+      0%{ transform:scale(.95); box-shadow:0 0 0 0 rgba(59,130,246,.6); }
+      70%{ transform:scale(1); box-shadow:0 0 0 8px rgba(59,130,246,0); }
+      100%{ transform:scale(.95); box-shadow:0 0 0 0 rgba(59,130,246,0); }
+    }
+
+    .dashboard-footer{ text-align:center; margin-top:2.5rem; color:#64748b; font-size:.9rem; }
+    .no-data{ text-align:center; padding:1rem; color:#94a3b8; font-style:italic; }
+  </style>
+</head>
+<body>
+  <div class="dashboard-header">
+    <h1>Data Performance Dashboard</h1>
+    <p>Real-time metrics visualized through animated speedometers</p>
+  </div>
+
+  <section class="grid">
+    <!-- Gender -->
+    <div class="card" style="--card-color:#3b82f6;">
+      <div class="card-header">
+        <div class="icon-wrapper" style="color:#3b82f6"><i class="fas fa-venus-mars"></i></div>
+        <h2 class="card-title">Gender Summary</h2>
+      </div>
+      <div class="speedometer-container">
+        <canvas id="gender-speedometer" class="speedometer-canvas"></canvas>
+        <div class="speed-value" id="gender-value">0</div>
+        <div class="speed-label">Total Participants</div>
+      </div>
+      <ul class="stats-list" id="gender-stats"></ul>
+    </div>
+
+    <!-- Grant -->
+    <div class="card" style="--card-color:#06b6d4;">
+      <div class="card-header">
+        <div class="icon-wrapper" style="color:#06b6d4"><i class="fas fa-hand-holding-usd"></i></div>
+        <h2 class="card-title">Grant Summary</h2>
+      </div>
+      <div class="speedometer-container">
+        <canvas id="grant-speedometer" class="speedometer-canvas"></canvas>
+        <div class="speed-value" id="grant-value">0</div>
+        <div class="speed-label">Total Grants</div>
+      </div>
+      <ul class="stats-list" id="grant-stats"></ul>
+    </div>
+
+    <!-- TISH -->
+    <div class="card" style="--card-color:#8b5cf6;">
+      <div class="card-header">
+        <div class="icon-wrapper" style="color:#8b5cf6"><i class="fas fa-map-marked-alt"></i></div>
+        <h2 class="card-title">TISH Summary</h2>
+      </div>
+      <div class="speedometer-container">
+        <canvas id="tish-speedometer" class="speedometer-canvas"></canvas>
+        <div class="speed-value" id="tish-value">0</div>
+        <div class="speed-label">Total Areas</div>
+      </div>
+      <ul class="stats-list" id="tish-stats"></ul>
+    </div>
+  </section>
+
+  <div class="dashboard-footer">
+    <p>Data updated in real-time • Powered by AI-AbaNtu Intelligence</p>
+  </div>
+
+  <script>
+    // Keep references to charts so we can destroy and redraw to avoid duplicates
+    window.__dashboardCharts = window.__dashboardCharts || {};
+
+    fetch("{% url 'dashboard_data' %}")
+    .then(response => response.json())
+    .then(data => updateDashboard(data))
+    .catch(err => console.error("Error loading dashboard:", err));
+
+
+    function animateValue(element, start, end, duration = 1500) {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        element.textContent = Math.floor(progress * (end - start) + start);
+        if (progress < 1) window.requestAnimationFrame(step);
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    function buildDoughnut(canvasId, percentage, color) {
+      // destroy existing chart if present
+      if (window.__dashboardCharts[canvasId]) {
+        try { window.__dashboardCharts[canvasId].destroy(); } catch(e){ /* ignore */ }
+      }
+
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+      gradient.addColorStop(0, '#374151');
+      gradient.addColorStop(0.5, color);
+      gradient.addColorStop(1, color);
+
+      const cfg = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [percentage, Math.max(0, 100 - percentage)],
+            backgroundColor: [gradient, '#111827'],
+            borderWidth: 0,
+            circumference: 180,
+            rotation: 270,
+            borderRadius: 8,
+            cutout: '75%'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          animation: { animateRotate: true, animateScale: true, duration: 1100 }
+        }
+      });
+
+      window.__dashboardCharts[canvasId] = cfg;
+      return cfg;
+    }
+
+    function populateStatsList(containerId, dataObj, color) {
+      const el = document.getElementById(containerId);
+      el.innerHTML = '';
+      const entries = Object.entries(dataObj || {});
+      if (entries.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'no-data';
+        li.textContent = 'No data available';
+        el.appendChild(li);
+        return;
+      }
+      // Sort entries by value desc
+      entries.sort((a,b) => b[1] - a[1]);
+      for (const [label, value] of entries) {
+        const li = document.createElement('li');
+        li.className = 'stats-item';
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'stat-label';
+        labelSpan.innerHTML = `<span class="pulse" style="background-color:${color}"></span>${label}`;
+        const valueSpan = document.createElement('span');
+        valueSpan.className = 'stat-value';
+        valueSpan.style.color = color;
+        valueSpan.textContent = value;
+        li.appendChild(labelSpan);
+        li.appendChild(valueSpan);
+        el.appendChild(li);
+      }
+    }
+
+    function renderSpeedometerBlock(canvasId, valueElementId, statsContainerId, dataObj, color) {
+      // compute totals and a safe max for scale
+      const total = Object.values(dataObj || {}).reduce((s,v) => s + v, 0);
+      const maxSingle = Math.max(5, ...Object.values(dataObj || [0]));
+      const percentage = (total === 0) ? 0 : Math.min(100, Math.round((total / Math.max(maxSingle, total)) * 100));
+      animateValue(document.getElementById(valueElementId), 0, total, 1200);
+      buildDoughnut(canvasId, percentage, color);
+      populateStatsList(statsContainerId, dataObj, color);
+    }
+
+    async function fetchDashboardData() {
+      try {
+        const resp = await fetch('/dashboard-data/', { method: 'GET', headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
+        const json = await resp.json();
+
+        // Ensure keys exist
+        const gender = json.gender_counts || {};
+        const grant = json.grant_counts || {};
+        const tish  = json.tish_counts  || {};
+
+        // Render each block
+        renderSpeedometerBlock('gender-speedometer', 'gender-value', 'gender-stats', gender, '#3b82f6');
+        renderSpeedometerBlock('grant-speedometer', 'grant-value', 'grant-stats', grant, '#06b6d4');
+        renderSpeedometerBlock('tish-speedometer',  'tish-value',  'tish-stats',  tish,  '#8b5cf6');
+
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err);
+        // If error, show friendly messages
+        document.getElementById('gender-stats').innerHTML = '<li class="no-data">Error loading data</li>';
+        document.getElementById('grant-stats').innerHTML  = '<li class="no-data">Error loading data</li>';
+        document.getElementById('tish-stats').innerHTML   = '<li class="no-data">Error loading data</li>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // initial load
+      fetchDashboardData();
+
+      // optional periodic refresh (uncomment if you want auto-updates)
+      // setInterval(fetchDashboardData, 5000);
+    });
+  </script>
+</body>
+</html>
