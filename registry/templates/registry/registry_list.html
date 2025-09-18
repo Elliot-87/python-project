@@ -160,6 +160,7 @@
         min-width: 1000px;
       }
     }
+    .dashboard-footer{ text-align:center; margin-top:2.5rem; color:#64748b; font-size:.9rem; }
     
   </style>
 </head>
@@ -180,23 +181,32 @@
             <p class="text-xs text-gray-600">Empowering communities through technology</p>
           </div>
         </div>
-     <a href="{% url 'dashboard' %}" 
-         class="btn-secondary px-4 py-2 text-white rounded-lg shadow-md flex items-center justify-center gap-2">
-        <i class="fas fa-file-stats"></i>
-        <span>Open Dashboard</span>
-      </a>
-
+   
 
       <a href="{% url 'registry_create' %}" 
          class="btn-primary px-4 py-2 text-white rounded-lg shadow-md flex items-center justify-center gap-2">
         <i class="fas fa-plus-circle"></i>
         <span>Add New Entry</span>
       </a>
+
+  <a href="{% url 'dashboard' %}" 
+         class="btn-secondary px-4 py-2 text-white rounded-lg shadow-md flex items-center justify-center gap-2">
+        <i class="fas fa-file-stats"></i>
+        <span>Open Dashboard</span>
+      </a>
+
+
       <a href="{% url 'export_pdf' %}" 
          class="btn-secondary px-4 py-2 text-white rounded-lg shadow-md flex items-center justify-center gap-2">
         <i class="fas fa-file-pdf"></i>
         <span>Export PDF</span>
       </a>
+      <a href="{% url 'admin:index' %}" 
+   class="btn-secondary px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow flex items-center gap-2">
+    <i class="fas fa-user-shield"></i>
+    <span>Admin Panel</span>
+</a>
+
     </div>
   </header>
 
@@ -332,6 +342,7 @@
       
             </tr>
           </thead>
+          
           <tbody class="text-sm divide-y divide-gray-200">
             {% for entry in entries %}
             <tr class="hover:bg-gray-50 transition-colors">
@@ -371,7 +382,8 @@
                 </span>
               </td>
               <td class="px-4 py-3">{{ entry.sign }}</td>
-              <td class   
+             
+    
        <!-- SIGNATURE COLUMN -->
 <td class="px-4 py-3 text-center">
   {% if entry.signature_image %}
@@ -445,6 +457,11 @@
       {% endif %}
     </div>
     {% endif %}
+    
+         <div class="dashboard-footer">
+    <p>Data updated in real-time • Powered by AI-AbaNtu Intelligence</p>
+  </div> 
+
 
   </main>
 

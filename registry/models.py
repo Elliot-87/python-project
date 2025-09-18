@@ -24,7 +24,6 @@ class RegistryEntry(models.Model):
     ])
     cooperative_member = models.BooleanField(default=False)
     signature_data = models.JSONField(null=True, blank=True)  # Stores drawing coordinates
-<<<<<<< HEAD
     signature_image = models.ImageField(upload_to='signatures/', null=True, blank=True) 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -33,9 +32,7 @@ class RegistryEntry(models.Model):
     
     def get_gender_display(self):
         return dict(self._meta.get_field('gender').choices).get(self.gender, self.gender)
-=======
     signature_image = models.ImageField(upload_to='signatures/', null=True, blank=True)
->>>>>>> 9966c25f56eb3144e75f624d854dcf21930ccc4a
 
     def __str__(self):
         return f"{self.names} {self.surname}"

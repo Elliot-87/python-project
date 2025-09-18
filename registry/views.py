@@ -11,14 +11,79 @@ from reportlab.platypus import Table, TableStyle
 from .models import RegistryEntry
 from .forms import RegistryForm
 import json
-<<<<<<< HEAD
 from django.http import JsonResponse
 from .utils import signature_data_to_image
-=======
 import base64
 from io import BytesIO
 from django.core.files.base import ContentFile
 from PIL import Image, ImageDraw
+import os
+from django.conf import settings
+
+
+def preview_pdf(request):
+    response = export_pdf(request)
+    response['Content-Disposition'] = 'inline; filename="preview.pdf"'
+    return response
+
+def export_pdf(request):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="registry_entries.pdf"'
+
+    c = canvas.Canvas(response, pagesize=landscape(A4))
+    width, height = landscape(A4)
+    center_x = width / 2
+
+    # Logo centered
+    logo_path = "static/images/logo.png"
+    if os.path.exists(logo_path):
+        logo = ImageReader(logo_path)
+        logo_width = 40*mm
+        logo_x = center_x - (logo_width / 2)
+        c.drawImage(logo, logo_x, height - 30*mm, width=logo_width, preserveAspectRatio=True)
+
+    # Title centered
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(center_x, height - 45*mm, "Registry Entries")
+
+    # Table data
+    entries = RegistryEntry.objects.all()
+    data = [["Name", "Surname", "Email", "Phone", "Signature"]]
+    col_widths = [50*mm, 50*mm, 70*mm, 40*mm, 60*mm]
+    total_table_width = sum(col_widths)
+    start_x = (width - total_table_width) / 2  # Center table
+
+    for entry in entries:
+        sig_path = entry.signature_image.path if entry.signature_image else None
+        data.append([
+            entry.names, entry.surname, entry.email, entry.phone,
+            sig_path if sig_path else ""
+        ])
+
+    # Create table
+    table = Table(data, colWidths=col_widths)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 12),
+        ('BOTTOMPADDING', (0,0), (-1,0), 12),
+        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+        ('GRID', (0,0), (-1,-1), 1, colors.black)
+    ]))
+
+    # Draw table
+    y_position = height - 60*mm
+    table.wrapOn(c, width, height)
+    table_height = len(data) * 15  # Approximate row height
+    if y_position - table_height < 20*mm:
+        c.showPage()
+        y_position = height - 40*mm
+    table.drawOn(c, start_x, y_position - table_height)
+
+    c.save()
+    return response
 
 # Add this function to convert signature data to an image
 def signature_data_to_image(signature_data, output_size=(300, 100)):
@@ -135,7 +200,6 @@ def registry_update(request, pk):
     else:
         form = RegistryForm(instance=entry)
     return render(request, 'registry/registry_form.html', {'form': form})
->>>>>>> 9966c25f56eb3144e75f624d854dcf21930ccc4a
 
 def registry_view(request):
     """Handle the registry form submission"""

@@ -9,11 +9,9 @@ from django.contrib import admin
 class RegistryForm(forms.ModelForm):
     class Meta:
         model = RegistryEntry
-<<<<<<< HEAD
         exclude = ['signature_data', 'signature_image', 'created_at']
         fields = '__all__'
         
-=======
         exclude = ['signature_data', 'signature_image']
         fields = [
             'names',
@@ -31,4 +29,3 @@ class RegistryForm(forms.ModelForm):
             'cooperative_member',
             
         ]
->>>>>>> 9966c25f56eb3144e75f624d854dcf21930ccc4a
