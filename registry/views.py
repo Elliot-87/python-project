@@ -21,69 +21,86 @@ import os
 from django.conf import settings
 
 
-def preview_pdf(request):
-    response = export_pdf(request)
-    response['Content-Disposition'] = 'inline; filename="preview.pdf"'
-    return response
 
 def export_pdf(request):
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="registry_entries.pdf"'
-
-    c = canvas.Canvas(response, pagesize=landscape(A4))
+    # Create a buffer
+    buffer = BytesIO()
+    
+    # Landscape A4
+    pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
     width, height = landscape(A4)
-    center_x = width / 2
-
-    # Logo centered
-    logo_path = "static/images/logo.png"
+    
+    # Add company logo at top-left (adjust path as needed)
+    logo_path = os.path.join(settings.BASE_DIR, "static", "images", "logo.png")
     if os.path.exists(logo_path):
-        logo = ImageReader(logo_path)
-        logo_width = 40*mm
-        logo_x = center_x - (logo_width / 2)
-        c.drawImage(logo, logo_x, height - 30*mm, width=logo_width, preserveAspectRatio=True)
-
-    # Title centered
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(center_x, height - 45*mm, "Registry Entries")
-
-    # Table data
+        pdf.drawImage(logo_path, x=30, y=height-80, width=100, height=50, preserveAspectRatio=True, mask='auto')
+    
+    # Title
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(150, height-50, "Registry Entries Report")
+    
+    # Table headers
+    headers = ["Names", "Surname", "ID/DOB", "Gender", "Contact", "Area", "Signature"]
+    data = [headers]
+    
+    # Fetch entries
     entries = RegistryEntry.objects.all()
-    data = [["Name", "Surname", "Email", "Phone", "Signature"]]
-    col_widths = [50*mm, 50*mm, 70*mm, 40*mm, 60*mm]
-    total_table_width = sum(col_widths)
-    start_x = (width - total_table_width) / 2  # Center table
-
+    
     for entry in entries:
-        sig_path = entry.signature_image.path if entry.signature_image else None
-        data.append([
-            entry.names, entry.surname, entry.email, entry.phone,
-            sig_path if sig_path else ""
-        ])
-
+        # If signature exists, create an Image object for table
+        if entry.signature_image and entry.signature_image.path and os.path.exists(entry.signature_image.path):
+            sig_img = Image(entry.signature_image.path, width=80, height=30)  # resize for table
+        else:
+            sig_img = "No Signature"
+        
+        row = [
+            entry.names,
+            entry.surname,
+            entry.id_no_or_dob,
+            entry.gender,
+            entry.contact_number,
+            entry.tish_area,
+            sig_img
+        ]
+        data.append(row)
+    
     # Create table
-    table = Table(data, colWidths=col_widths)
+    table = Table(data, repeatRows=1, colWidths=[80, 80, 90, 60, 90, 80, 120])
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.grey),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#1f2937")),  # dark gray header
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,0), 12),
-        ('BOTTOMPADDING', (0,0), (-1,0), 12),
-        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
-        ('GRID', (0,0), (-1,-1), 1, colors.black)
+        ('FONTSIZE', (0,0), (-1,0), 11),
+        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+        
+        ('GRID', (0,0), (-1,-1), 0.25, colors.black),
+        ('ALIGN', (0,0), (-2,-1), 'CENTER'),   # center text except signature column
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
     ]))
-
-    # Draw table
-    y_position = height - 60*mm
-    table.wrapOn(c, width, height)
-    table_height = len(data) * 15  # Approximate row height
-    if y_position - table_height < 20*mm:
-        c.showPage()
-        y_position = height - 40*mm
-    table.drawOn(c, start_x, y_position - table_height)
-
-    c.save()
+    
+    # Calculate table position
+    table_width, table_height = table.wrap(0, 0)
+    x = (width - table_width) / 2
+    y = height - 150 - table_height
+    
+    table.wrapOn(pdf, width, height)
+    table.drawOn(pdf, x, y)
+    
+    # Footer with page number
+    pdf.setFont("Helvetica", 9)
+    pdf.drawRightString(width-40, 30, f"Page 1 of 1")  # (basic single-page example)
+    
+    # Finalize PDF
+    pdf.save()
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    
+    # Return response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="registry_report.pdf"'
+    response.write(pdf_bytes)
     return response
+
 
 # Add this function to convert signature data to an image
 def signature_data_to_image(signature_data, output_size=(300, 100)):

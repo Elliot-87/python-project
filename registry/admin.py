@@ -10,6 +10,15 @@ from django.utils.html import format_html
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 from io import BytesIO
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Image, Spacer, Paragraph
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from django.conf import settings
+import os
+
+
+
 
 # ==================== EXPORT FUNCTIONS (DEFINE FIRST) ====================
 

@@ -9,5 +9,6 @@ urlpatterns = [
     path('export/pdf/', views.export_pdf, name='export_pdf'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard-data/', views.dashboard_data, name='dashboard_data'),
+    path('admin/export-pdf/', views.export_pdf, name='export_pdf'),
 
 ]
