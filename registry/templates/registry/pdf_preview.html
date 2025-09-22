@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beneficiary Register - 2025</title>
+  <style>
+      @page {
+          size: A4 landscape;
+          margin: 10mm;
+      }
+
+      body {
+          font-family: DejaVu Sans, sans-serif;
+          font-size: 8pt;
+          margin: 0;
+          padding: 0;
+          line-height: 1.2;
+      }
+
+      .header {
+          text-align: center;
+          margin-bottom: 10px;
+          padding-bottom: 5px;
+          border-bottom: 2px solid #333;
+      }
+      
+      .header h1 {
+          font-size: 14pt;
+          margin: 2px 0;
+          font-weight: bold;
+      }
+      
+      .header h2 {
+          font-size: 10pt;
+          margin: 2px 0;
+          font-weight: normal;
+      }
+      
+      .header p {
+          font-size: 9pt;
+          margin: 2px 0;
+      }
+
+      table {
+          width: 100%;
+          border-collapse: collapse;
+          table-layout: fixed;
+      }
+
+      th, td {
+          border: 1px solid #444;
+          padding: 4px 3px;
+          vertical-align: top;
+          word-wrap: break-word;
+          line-height: 1.1;
+      }
+
+      th {
+          background-color: #f8f8f8;
+          text-align: center;
+          font-weight: bold;
+          font-size: 7.5pt;
+          padding: 5px 3px;
+      }
+
+           /* proportional column widths */
+      th:nth-child(1), td:nth-child(1) { width: 1.5%; }  /* No. (slimmer) */
+      th:nth-child(2), td:nth-child(2) { width: 8%; }    /* Names */
+      th:nth-child(3), td:nth-child(3) { width: 8%; }    /* Surname */
+      th:nth-child(4), td:nth-child(4) { width: 13.5%; } /* ID No./DOB (expanded) */
+      th:nth-child(5), td:nth-child(5) { width: 7%; }    /* Gender */
+      th:nth-child(6), td:nth-child(6) { width: 4%; }    /* Disability */
+      th:nth-child(7), td:nth-child(7) { width: 10%; }   /* Address */
+      th:nth-child(8), td:nth-child(8) { width: 9%; }    /* TISH Area */
+      th:nth-child(9), td:nth-child(9) { width: 5%; }    /* Ward */
+      th:nth-child(10), td:nth-child(10) { width: 12%; } /* Contact Number */
+      th:nth-child(11), td:nth-child(11) { width: 6%; }  /* Race */
+      th:nth-child(12), td:nth-child(12) { width: 7%; }  /* Recovering */
+      th:nth-child(13), td:nth-child(13) { width: 13%; } /* Social Grant */
+      th:nth-child(14), td:nth-child(14) { width: 7%; }  /* Cooperative */
+      th:nth-child(15), td:nth-child(15) { width: 6%; }  /* Sign */
+
+
+      /* Text alignment */
+      .center { text-align: center; }
+      .left { text-align: left; }
+      
+      .compact { padding: 2px 1px; }
+
+      .footer {
+          margin-top: 8px;
+          text-align: center;
+          font-size: 7pt;
+          border-top: 1px solid #000;
+          padding-top: 3px;
+          color: #666;
+      }
+      
+      /* Zebra striping for better readability */
+      tbody tr:nth-child(even) {
+          background-color: #fafafa;
+      }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+      <!-- Remove or fix logo path if needed -->
+      <!-- <img src="{{ STATIC_URL }}images/logo.png" alt="Organization Logo"> -->
+      <h1>GAUTENG PROVINCE</h1>
+      <h2>BELIEVERS CARE SOCIETY • ADVISORY & REFERRALS 2025</h2>
+      <p>Date: {% now "F j, Y" %}</p>
+  </div>
+
+  <!-- TABLE -->
+  <table>
+      <thead>
+          <tr>
+              <th>No.</th>
+              <th>Names</th>
+              <th>Surname</th>
+              <th>ID No./DOB</th>
+              <th>Gender</th>
+              <th>Disability</th>
+              <th>Address</th>
+              <th>TISH Area</th>
+              <th>Ward</th>
+              <th>Contact</th>
+              <th>Race</th>
+              <th>Recovering</th>
+              <th>Social Grant</th>
+              <th>Cooperative</th>
+              <th>Sign</th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for entry in entries %}
+          <tr>
+              <td class="center compact">{{ forloop.counter }}</td>
+              <td class="left">{{ entry.names|default:"-" }}</td>
+              <td class="left">{{ entry.surname|default:"-" }}</td>
+              <td class="left">{{ entry.id_no_or_dob|default:"-" }}</td>
+              <td class="center compact">{{ entry.gender|default:"-" }}</td>
+              <td class="center compact">{{ entry.disability|yesno:"Yes,No" }}</td>
+              <td class="left">{{ entry.physical_address|default:"-"|truncatewords:5 }}</td>
+              <td class="left">{{ entry.tish_area|default:"-" }}</td>
+              <td class="center compact">{{ entry.ward_no|default:"-" }}</td>
+              <td class="left">{{ entry.contact_number|default:"-" }}</td>
+              <td class="left">{{ entry.race|default:"-" }}</td>
+              <td class="center compact">{{ entry.recovering_service_user|yesno:"Yes,No" }}</td>
+              <td class="left">{{ entry.social_grant|default:"-" }}</td>
+              <td class="center compact">{{ entry.cooperative_member|yesno:"Yes,No" }}</td>
+              <td class="center compact">{% if entry.signature_image %}✓{% else %}—{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr>
+              <td colspan="15" class="center" style="color:#999; padding:10px;">No records found</td>
+          </tr>
+          {% endfor %}
+      </tbody>
+  </table>
+
+  <!-- FOOTER -->
+  <div class="footer">
+      BELIEVERS CARE SOCIETY • ADVISORY & REFERRALS 2025 • Page generated on {% now "F j, Y" %}
+  </div>
+
+</body>
+</html>

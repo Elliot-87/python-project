@@ -15,35 +15,53 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.conf import settings
+from django.template.loader import get_template
 import os
-
+from xhtml2pdf import pisa
 
 
 
 # ==================== EXPORT FUNCTIONS (DEFINE FIRST) ====================
+# registry/admin.py
 
-def export_as_pdf_template(modeladmin, request, queryset):
-    """Export selected entries as PDF using template"""
+
+
+
+
+
+def export_as_pdf(modeladmin, request, queryset):
+    """
+    Admin action: Export selected RegistryEntry objects to PDF.
+    Uses pdf_preview.html as the template.
+    """
+    template = get_template("registry/pdf_preview.html")
     context = {
-        'entries': queryset,
-        'export_date': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+        "entries": queryset,
+        "total_count": queryset.count(),
     }
-    
-    html_string = render_to_string('registry/registry_export_pdf.html', context)
-    
-    response = HttpResponse(content_type='application/pdf')
-    filename = f"registry_export_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
+
+    # Render HTML
+    html = template.render(context)
+
+    # Decide whether to download or just view inline
+    download = request.GET.get("download", "false").lower() == "true"
+    response = HttpResponse(content_type="application/pdf")
+    if download:
+        response["Content-Disposition"] = 'attachment; filename="registry_report.pdf"'
+    else:
+        response["Content-Disposition"] = 'inline; filename="registry_report.pdf"'
+
     # Create PDF
-    pdf = pisa.pisaDocument(BytesIO(html_string.encode("UTF-8")), response)
-    
-    if pdf.err:
-        return HttpResponse('Error generating PDF', status=500)
-    
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse("Error generating PDF", status=500)
     return response
 
-export_as_pdf_template.short_description = "Export as PDF (Formatted)"
+
+export_as_pdf.short_description = "Export selected entries as PDF"
+
+
 
 def export_csv(modeladmin, request, queryset):
     """Export selected entries as CSV"""
@@ -169,7 +187,7 @@ class RegistryEntryAdmin(admin.ModelAdmin):
     
     # ADD ALL ACTIONS HERE - functions are now defined above
     actions = [
-        export_as_pdf_template, export_csv, generate_daily_report,
+        export_as_pdf, export_csv, generate_daily_report,
         generate_weekly_report, generate_monthly_report, generate_yearly_report
     ]
     

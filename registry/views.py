@@ -19,7 +19,70 @@ from django.core.files.base import ContentFile
 from PIL import Image, ImageDraw
 import os
 from django.conf import settings
+import tempfile
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.utils import timezone
 
+
+
+def pdf_preview(request):
+    entries = RegistryEntry.objects.all()
+    total_count = entries.count()
+    return render(request, "registry/pdf_preview.html", {
+        "entries": entries,
+        "total_count": total_count,
+        "now": timezone.now(),
+    })
+    # Set up HTTP response
+    response = HttpResponse(content_type="application/pdf")
+    if request.GET.get("download"):
+        response['Content-Disposition'] = 'attachment; filename="registry_report.pdf"'
+    else:
+        response['Content-Disposition'] = 'inline; filename="registry_report.pdf"'
+
+    # Create a PDF in memory
+    result = io.BytesIO()
+
+    pisa_status = pisa.CreatePDF(
+        src=html,
+        dest=result,
+        encoding="UTF-8",
+        default_css="""
+            @page {
+                size: A4 landscape;
+                margin: 15mm;
+            }
+            body {
+                font-family: DejaVu Sans, sans-serif;
+                font-size: 10pt;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            th, td {
+                border: 1px solid #444;
+                padding: 4px;
+                text-align: left;
+            }
+        """
+    )
+
+    if pisa_status.err:
+        return HttpResponse("Error generating PDF", status=500)
+
+    # Write PDF to response
+    response.write(result.getvalue())
+    return response
+
+    # Serve the PDF
+    response = HttpResponse(result.getvalue(), content_type="application/pdf")
+    if request.GET.get("download"):
+        response["Content-Disposition"] = 'attachment; filename="registry_report.pdf"'
+    else:
+        response["Content-Disposition"] = 'inline; filename="registry_report.pdf"'
+    return response
 
 
 def export_pdf(request):
@@ -330,21 +393,6 @@ def registry_delete(request, pk):
 
 # 5️⃣ Export PDF (matches your Blueprint fields)
 # registry/views.py
-from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Q
-from collections import Counter
-from django.http import HttpResponse
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import mm
-from reportlab.platypus import Table, TableStyle
-from .models import RegistryEntry
-from .forms import RegistryForm
-import json
-from django.http import JsonResponse
-from .utils import signature_data_to_image
-
 
 
 
