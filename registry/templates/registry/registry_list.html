@@ -374,18 +374,13 @@
              
     
        <!-- SIGNATURE COLUMN -->
-<td class="px-4 py-3 text-center">
-  {% if entry.signature_image %}
-    <div class="flex justify-center">
-      <img src="{{ entry.signature_image.url }}" 
-           alt="Signature" 
-           class="h-12 w-24 object-contain border rounded cursor-pointer hover:scale-105 transition"
-           title="Click to view signature"
-           onclick="showSignatureModal('{{ entry.signature_image.url }}')">
-    </div>
-  {% else %}
-    <span class="text-red-500 text-xs">No signature</span>
-  {% endif %}
+<!-- In your registry_list.html -->
+<td class="center compact">
+    {% if entry.signature_image %}
+        <span style="color: #27ae60;" title="Signed">✓</span>
+    {% else %}
+        <span style="color: #e74c3c;" title="Not signed">—</span>
+    {% endif %}
 </td>
 
 <!-- ACTIONS COLUMN -->

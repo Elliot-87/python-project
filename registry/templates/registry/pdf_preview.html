@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Beneficiary Register - 2025</title>
   <style>
       @page {
@@ -10,110 +13,200 @@
       }
 
       body {
-          font-family: DejaVu Sans, sans-serif;
+          font-family: 'DejaVu Sans', Arial, sans-serif;
           font-size: 8pt;
           margin: 0;
           padding: 0;
           line-height: 1.2;
+          color: #333;
       }
 
-      .header {
+      .header-container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+          padding: 8px 0;
+          border-bottom: 3px double #2c3e50;
+      }
+
+      .logo-section {
+          flex: 0 0 auto;
           text-align: center;
-          margin-bottom: 10px;
-          padding-bottom: 5px;
-          border-bottom: 2px solid #333;
+          padding: 0 15px;
       }
-      
-      .header h1 {
-          font-size: 14pt;
-          margin: 2px 0;
+
+      .logo-placeholder {
+          width: 80px;
+          height: 80px;
+          background: linear-gradient(135deg, #3498db, #2c3e50);
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
           font-weight: bold;
-      }
-      
-      .header h2 {
-          font-size: 10pt;
-          margin: 2px 0;
-          font-weight: normal;
-      }
-      
-      .header p {
           font-size: 9pt;
+          margin: 0 auto 5px;
+          border: 2px solid #2c3e50;
+      }
+
+      .logo-placeholder img {
+          width: 70px;
+          height: 70px;
+          object-fit: contain;
+      }
+
+      .organization-section {
+          flex: 1;
+          text-align: center;
+          padding: 0 20px;
+      }
+
+      .organization-name {
+          font-size: 16pt;
+          font-weight: bold;
+          color: #2c3e50;
+          margin: 0;
+          letter-spacing: 1px;
+      }
+
+      .organization-subtitle {
+          font-size: 11pt;
+          color: #e74c3c;
           margin: 2px 0;
+          font-weight: 600;
+      }
+
+      .organization-details {
+          font-size: 9pt;
+          color: #7f8c8d;
+          margin: 3px 0;
+      }
+
+      .document-info {
+          flex: 0 0 auto;
+          text-align: right;
+          padding: 0 15px;
+          border-left: 1px solid #bdc3c7;
+      }
+
+      .document-title {
+          font-size: 12pt;
+          font-weight: bold;
+          color: #2c3e50;
+          margin: 0;
+      }
+
+      .document-date {
+          font-size: 9pt;
+          color: #7f8c8d;
+          margin: 3px 0;
       }
 
       table {
           width: 100%;
           border-collapse: collapse;
           table-layout: fixed;
+          margin-top: 5px;
       }
 
       th, td {
-          border: 1px solid #444;
-          padding: 4px 3px;
+          border: 1px solid #95a5a6;
+          padding: 5px 4px;
           vertical-align: top;
           word-wrap: break-word;
           line-height: 1.1;
       }
 
       th {
-          background-color: #f8f8f8;
+          background: linear-gradient(to bottom, #ecf0f1, #bdc3c7);
           text-align: center;
           font-weight: bold;
           font-size: 7.5pt;
-          padding: 5px 3px;
+          color: #2c3e50;
+          padding: 6px 4px;
       }
 
-           /* proportional column widths */
-      th:nth-child(1), td:nth-child(1) { width: 1.5%; }  /* No. (slimmer) */
-      th:nth-child(2), td:nth-child(2) { width: 8%; }    /* Names */
-      th:nth-child(3), td:nth-child(3) { width: 8%; }    /* Surname */
-      th:nth-child(4), td:nth-child(4) { width: 13.5%; } /* ID No./DOB (expanded) */
-      th:nth-child(5), td:nth-child(5) { width: 7%; }    /* Gender */
-      th:nth-child(6), td:nth-child(6) { width: 4%; }    /* Disability */
-      th:nth-child(7), td:nth-child(7) { width: 10%; }   /* Address */
-      th:nth-child(8), td:nth-child(8) { width: 9%; }    /* TISH Area */
-      th:nth-child(9), td:nth-child(9) { width: 5%; }    /* Ward */
-      th:nth-child(10), td:nth-child(10) { width: 12%; } /* Contact Number */
-      th:nth-child(11), td:nth-child(11) { width: 6%; }  /* Race */
-      th:nth-child(12), td:nth-child(12) { width: 7%; }  /* Recovering */
-      th:nth-child(13), td:nth-child(13) { width: 13%; } /* Social Grant */
-      th:nth-child(14), td:nth-child(14) { width: 7%; }  /* Cooperative */
-      th:nth-child(15), td:nth-child(15) { width: 6%; }  /* Sign */
+      /* Column widths */
+      th:nth-child(1), td:nth-child(1) { width: 3%; }
+      th:nth-child(2), td:nth-child(2) { width: 9%; }
+      th:nth-child(3), td:nth-child(3) { width: 9%; }
+      th:nth-child(4), td:nth-child(4) { width: 10%; }
+      th:nth-child(5), td:nth-child(5) { width: 5%; }
+      th:nth-child(6), td:nth-child(6) { width: 5%; }
+      th:nth-child(7), td:nth-child(7) { width: 12%; }
+      th:nth-child(8), td:nth-child(8) { width: 8%; }
+      th:nth-child(9), td:nth-child(9) { width: 5%; }
+      th:nth-child(10), td:nth-child(10) { width: 8%; }
+      th:nth-child(11), td:nth-child(11) { width: 6%; }
+      th:nth-child(12), td:nth-child(12) { width: 6%; }
+      th:nth-child(13), td:nth-child(13) { width: 10%; }
+      th:nth-child(14), td:nth-child(14) { width: 5%; }
+      th:nth-child(15), td:nth-child(15) { width: 5%; }
 
-
-      /* Text alignment */
       .center { text-align: center; }
       .left { text-align: left; }
-      
-      .compact { padding: 2px 1px; }
+      .compact { padding: 3px 2px; }
 
       .footer {
-          margin-top: 8px;
+          margin-top: 10px;
           text-align: center;
           font-size: 7pt;
-          border-top: 1px solid #000;
-          padding-top: 3px;
-          color: #666;
+          border-top: 1px solid #bdc3c7;
+          padding-top: 4px;
+          color: #7f8c8d;
       }
       
-      /* Zebra striping for better readability */
       tbody tr:nth-child(even) {
-          background-color: #fafafa;
+          background-color: #f8f9fa;
+      }
+
+      @media print {
+          body { margin: 0; padding: 0; }
+          .header-container { border-bottom: 3px double #000; }
+          th { background: #f0f0f0 !important; }
+          tbody tr:nth-child(even) { background-color: #f8f8f8 !important; }
       }
   </style>
 </head>
 <body>
-
-  <!-- HEADER -->
-  <div class="header">
-      <!-- Remove or fix logo path if needed -->
-      <!-- <img src="{{ STATIC_URL }}images/logo.png" alt="Organization Logo"> -->
-      <h1>GAUTENG PROVINCE</h1>
-      <h2>BELIEVERS CARE SOCIETY • ADVISORY & REFERRALS 2025</h2>
-      <p>Date: {% now "F j, Y" %}</p>
+<!-- Debug Section - Remove after testing -->
+<div style="border: 2px solid red; padding: 10px; margin: 10px; background: #ffe6e6;">
+    <strong>Logo Debug Info:</strong><br>
+    {% with logo_path="file:///C:/Users/Admin/Desktop/repo/python-project/static/images/logo.png" %}
+    Path: {{ logo_path }}<br>
+    {% endwith %}
+</div>
+  <!-- Header -->
+  <div class="header-container">
+      <div class="logo-section">
+    <div class="logo-placeholder">
+        <svg width="70" height="70" viewBox="0 0 100 100">
+            <!-- Your logo as SVG code -->
+            <rect width="100" height="100" fill="#2c3e50" rx="10"/>
+            <text x="50" y="55" text-anchor="middle" fill="white" font-family="Arial" font-size="16" font-weight="bold">BCS</text>
+            <text x="50" y="75" text-anchor="middle" fill="#3498db" font-family="Arial" font-size="10">LOGO</text>
+        </svg>
+    </div>
+    <div style="font-size: 7pt; color: #7f8c8d;">Official Seal</div>
+</div>
+      
+      <div class="organization-section">
+          <h1 class="organization-name">GAUTENG PROVINCE</h1>
+          <div class="organization-subtitle">BELIEVERS CARE SOCIETY</div>
+          <div class="organization-details">ADVISORY & REFERRALS SERVICES</div>
+          <div class="organization-details">2025 BENEFICIARY REGISTER</div>
+      </div>
+      
+      <div class="document-info">
+          <div class="document-title">PDF PREVIEW</div>
+          <div class="document-date">Generated: {% now "F j, Y" %}</div>
+          <div class="document-ref">Ref: BCS-PREVIEW-2025</div>
+      </div>
   </div>
 
-  <!-- TABLE -->
+  <!-- Table -->
   <table>
       <thead>
           <tr>
@@ -143,7 +236,7 @@
               <td class="left">{{ entry.id_no_or_dob|default:"-" }}</td>
               <td class="center compact">{{ entry.gender|default:"-" }}</td>
               <td class="center compact">{{ entry.disability|yesno:"Yes,No" }}</td>
-              <td class="left">{{ entry.physical_address|default:"-"|truncatewords:5 }}</td>
+              <td class="left">{{ entry.physical_address|default:"-"|truncatewords:4 }}</td>
               <td class="left">{{ entry.tish_area|default:"-" }}</td>
               <td class="center compact">{{ entry.ward_no|default:"-" }}</td>
               <td class="left">{{ entry.contact_number|default:"-" }}</td>
@@ -155,15 +248,22 @@
           </tr>
           {% empty %}
           <tr>
-              <td colspan="15" class="center" style="color:#999; padding:10px;">No records found</td>
+              <td colspan="15" class="center" style="color:#999; padding:15px;">
+                  No beneficiary records found
+              </td>
           </tr>
           {% endfor %}
       </tbody>
   </table>
 
-  <!-- FOOTER -->
+  <!-- Footer -->
   <div class="footer">
-      BELIEVERS CARE SOCIETY • ADVISORY & REFERRALS 2025 • Page generated on {% now "F j, Y" %}
+      BELIEVERS CARE SOCIETY • PDF PREVIEW • {% now "F j, Y \a\t H:i" %}
+  </div>
+
+  <!-- Debug info (remove in production) -->
+  <div style="display: none; color: red; font-size: 8pt;">
+      Template: pdf_preview.html | Entries: {{ entries.count }} | Time: {% now "H:i:s" %}
   </div>
 
 </body>

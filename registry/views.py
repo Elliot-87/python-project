@@ -4,7 +4,7 @@ from django.db.models import Q
 from collections import Counter
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.platypus import Table, TableStyle
@@ -23,8 +23,70 @@ import tempfile
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.utils import timezone
+from django.core.files.base import ContentFile
+from django.utils.text import slugify
 
 
+
+def registry_create(request):
+    if request.method == "POST":
+        form = RegistryForm(request.POST, request.FILES)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            
+            # Process signature data
+            signature_data = request.POST.get('signature_data', '')
+            if signature_data:
+                try:
+                    # Convert base64 to image file
+                    format, imgstr = signature_data.split(';base64,') 
+                    ext = format.split('/')[-1] 
+                    
+                    # Create image file
+                    signature_file = ContentFile(
+                        base64.b64decode(imgstr), 
+                        name=f"signature_{slugify(entry.names)}_{slugify(entry.surname)}.{ext}"
+                    )
+                    
+                    # Save to model
+                    entry.signature_image = signature_file
+                    
+                except Exception as e:
+                    print(f"Signature processing error: {e}")
+                    # Continue without signature if there's an error
+            
+            entry.save()
+            return redirect('registry_list')
+    else:
+        form = RegistryForm()
+    return render(request, 'registry/registry_form.html', {'form': form})
+
+def registry_update(request, pk):
+    entry = get_object_or_404(RegistryEntry, pk=pk)
+    if request.method == "POST":
+        form = RegistryForm(request.POST, request.FILES, instance=entry)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            
+            # Process signature data (same as above)
+            signature_data = request.POST.get('signature_data', '')
+            if signature_data:
+                try:
+                    format, imgstr = signature_data.split(';base64,') 
+                    ext = format.split('/')[-1] 
+                    signature_file = ContentFile(
+                        base64.b64decode(imgstr), 
+                        name=f"signature_{slugify(entry.names)}_{slugify(entry.surname)}.{ext}"
+                    )
+                    entry.signature_image = signature_file
+                except Exception as e:
+                    print(f"Signature processing error: {e}")
+            
+            entry.save()
+            return redirect('registry_list')
+    else:
+        form = RegistryForm(instance=entry)
+    return render(request, 'registry/registry_form.html', {'form': form})
 
 def pdf_preview(request):
     entries = RegistryEntry.objects.all()

@@ -1,31 +1,72 @@
 # registry/forms.py
 from django import forms
 from .models import RegistryEntry
-from django.contrib import admin
-
-
-
 
 class RegistryForm(forms.ModelForm):
+    signature_data = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(attrs={'id': 'signature-data'}),
+        label=""
+    )
+    
     class Meta:
         model = RegistryEntry
-        exclude = ['signature_data', 'signature_image', 'created_at']
         fields = '__all__'
-        
-        exclude = ['signature_data', 'signature_image']
-        fields = [
-            'names',
-            'surname',
-            'id_no_or_dob',   # <-- use this (matches models.py)
-            'gender',
-            'disability',
-            'physical_address',
-            'tish_area',
-            'ward_no',
-            'contact_number',
-            'race',
-            'recovering_service_user',
-            'social_grant',
-            'cooperative_member',
-            
-        ]
+        widgets = {
+            'tish_area': forms.Select(attrs={
+                'class': 'form-control',
+                'required': 'required'
+            }),
+            'gender': forms.Select(attrs={'class': 'form-control'}),
+            'race': forms.Select(attrs={'class': 'form-control'}),
+            'names': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter full names'
+            }),
+            'surname': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter surname'
+            }),
+            'id_no_or_dob': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'ID number or Date of Birth'
+            }),
+            'physical_address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Enter physical address'
+            }),
+            'ward_no': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ward number'
+            }),
+            'contact_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contact number'
+            }),
+            'social_grant': forms.Select(attrs={
+                'class': 'form-control',
+                'id': 'social-grant-select'
+            }),
+            'disability': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'recovering_service_user': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'cooperative_member': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'signature_image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'style': 'display: none;'
+            }),
+            'signature_data': forms.HiddenInput(attrs={
+                'id': 'signature-data'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['names'].required = True
+        self.fields['surname'].required = True
+        self.fields['gender'].required = True
+        self.fields['tish_area'].required = True
+        self.fields['signature_image'].required = False
+        self.fields['signature_data'].required = False
+        self.fields['social_grant'].empty_label = "Select Grant Type"
+        self.fields['social_grant'].required = False

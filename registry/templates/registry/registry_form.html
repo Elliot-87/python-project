@@ -1,139 +1,642 @@
-<!-- registry/templates/registry/registry_form.html -->
-{% load static %}
-{% load widget_tweaks %}
+<!-- registry_form.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>{% if form.instance.pk %}Edit Entry{% else %}Add Entry{% endif %}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Include Signature Pad library -->
-  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-5xl mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-4">{% if form.instance.pk %}Edit Entry{% else %}Add Entry{% endif %}</h1>
-    
-    <form method="POST" class="space-y-4" id="registryForm" enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {% for field in form %}
-          <div class="flex flex-col">
-            <label class="font-semibold mb-1">{{ field.label }}</label>
-            {{ field|add_class:"border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" }}
-            {% if field.errors %}
-              <span class="text-red-500 text-sm">{{ field.errors }}</span>
-            {% endif %}
-          </div>
-        {% endfor %}
-      </div>
-      
-      <!-- Signature Section -->
-      <div class="mt-6 border-t pt-4">
-        <h2 class="text-xl font-semibold mb-3">Signature</h2>
-        <p class="text-sm text-gray-600 mb-3">Please sign in the box below using your mouse or touchscreen</p>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Registry Entry</title>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.min.js"></script>
+    <style>
+        .form-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
         
-        <div class="border rounded-lg p-4 bg-gray-50">
-          <canvas id="signatureCanvas" class="border rounded bg-white" width="600" height="200"></canvas>
-          
-          <div class="mt-3 flex space-x-2">
-            <button type="button" id="clearSignature" class="px-3 py-1 bg-red-500 text-white rounded text-sm">
-              Clear
+        .form-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .form-section h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 250px;
+            padding: 0 10px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+        
+        select.form-control {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        
+        /* TISH Area specific styling */
+        #id_tish_area {
+            background: white url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") no-repeat right 10px center;
+            background-size: 16px;
+            appearance: none;
+        }
+     
+.signature-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.signature-wrapper {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.signature-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.btn-secondary {
+    padding: 8px 15px;
+    background: #95a5a6;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+#signature-pad {
+    max-width: 100%;
+    background: white;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    #signature-pad {
+        width: 100% !important;
+        height: 150px !important;
+    }
+    
+    .signature-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    #signature-status {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <form method="post" id="registry-form" enctype="multipart/form-data" onsubmit="return handleFormSubmit()">
+    {% csrf_token %}
+  
+        <h2>{% if form.instance.pk %}Edit{% else %}Create New{% endif %} Registry Entry</h2>
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Personal Information Section -->
+            <div class="form-section">
+                <h3>Personal Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.names.id_for_label }}" class="required">Names</label>
+                        {{ form.names }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.surname.id_for_label }}" class="required">Surname</label>
+                        {{ form.surname }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.id_no_or_dob.id_for_label }}" class="required">ID Number/Date of Birth</label>
+                        {{ form.id_no_or_dob }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.gender.id_for_label }}" class="required">Gender</label>
+                        {{ form.gender }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.race.id_for_label }}">Race</label>
+                        {{ form.race }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.contact_number.id_for_label }}">Contact Number</label>
+                        {{ form.contact_number }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Residence Information Section -->
+            <div class="form-section">
+                <h3>Residence Information</h3>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label for="{{ form.physical_address.id_for_label }}">Physical Address</label>
+                        {{ form.physical_address }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.tish_area.id_for_label }}" class="required">TISH Area</label>
+                        {{ form.tish_area }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.ward_no.id_for_label }}">Ward Number</label>
+                        {{ form.ward_no }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status Information Section -->
+            <div class="form-section">
+                <h3>Status Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.social_grant.id_for_label }}">Social Grant</label>
+                        {{ form.social_grant }}
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        {{ form.disability }}
+                        <label for="{{ form.disability.id_for_label }}" style="margin: 0;">Disability</label>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        {{ form.recovering_service_user }}
+                        <label for="{{ form.recovering_service_user.id_for_label }}" style="margin: 0;">Recovering Service User</label>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        {{ form.cooperative_member }}
+                        <label for="{{ form.cooperative_member.id_for_label }}" style="margin: 0;">Cooperative Member</label>
+                    </div>
+                </div>
+            </div>
+            
+           <!-- Add this to your registry_form.html -->
+
+<!-- SVG Signature Method -->
+<div class="form-section">
+    <h3>Digital Signature (SVG Method)</h3>
+    
+    <div class="signature-container">
+        <label class="required">Draw your signature below:</label>
+        
+        <!-- SVG Signature Area -->
+        <svg id="svg-signature" width="100%" height="200" style="border: 2px dashed #3498db; background: white; cursor: crosshair;">
+            <rect width="100%" height="100%" fill="white"/>
+            <text x="50%" y="50%" text-anchor="middle" fill="#95a5a6" font-family="Arial" font-size="14">
+                Draw your signature here
+            </text>
+        </svg>
+        
+        <div class="signature-controls">
+            <button type="button" id="clear-svg-signature" class="btn btn-danger">
+                Clear Signature
             </button>
-            <button type="button" id="undoSignature" class="px-3 py-1 bg-yellow-500 text-white rounded text-sm">
-              Undo
-            </button>
-          </div>
-          
-          <div class="mt-2 text-sm text-gray-500">
-            By signing, you confirm the information provided is accurate.
-          </div>
+            <span id="svg-status">Ready to draw</span>
         </div>
         
-        <!-- Hidden field to store signature data -->
-        <input type="hidden" name="signature_data" id="signatureData">
-      </div>
-      
-      <div class="flex justify-between mt-6">
-        <a href="{% url 'registry_list' %}" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</a>
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-          {% if form.instance.pk %}Update{% else %}Save{% endif %}
+        <input type="hidden" name="signature_data" id="svg-signature-data">
+    </div>
+</div>
+<!-- Save Button Section -->
+<div class="form-section" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-left: 4px solid #27ae60;">
+    <h3 style="color: #27ae60; margin-bottom: 20px;">📋 Final Review & Save</h3>
+    
+    <div class="save-container" style="text-align: center; padding: 20px;">
+        <!-- Form Validation Summary -->
+        <div id="form-validation" style="margin-bottom: 20px; padding: 15px; border-radius: 5px; display: none;">
+            <strong>Please check the following:</strong>
+            <ul id="validation-errors" style="text-align: left; display: inline-block; margin: 10px 0;"></ul>
+        </div>
+        
+        <!-- Save Button -->
+        <button type="submit" id="save-all-button" class="btn-save-all">
+            💾 SAVE ALL ENTRY DETAILS
         </button>
-      </div>
-    </form>
-  </div>
+        
+        <!-- Additional Save Options -->
+        <div style="margin-top: 15px;">
+            <button type="button" id="save-draft" class="btn-save-draft">
+                💾 Save as Draft
+            </button>
+            
+            <button type="button" id="preview-entry" class="btn-preview">
+                👁️ Preview Before Saving
+            </button>
+        </div>
+        
+        <!-- Save Status -->
+        <div id="save-status" style="margin-top: 15px; font-size: 14px; color: #7f8c8d;">
+            Ready to save all information
+        </div>
+    </div>
+</div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const canvas = document.getElementById('signatureCanvas');
-      const signaturePad = new SignaturePad(canvas);
-      const signatureDataField = document.getElementById('signatureData');
-      const clearButton = document.getElementById('clearSignature');
-      const undoButton = document.getElementById('undoSignature');
-      const form = document.getElementById('registryForm');
-      
-      // Set up signature pad options
-      signaturePad.penColor = 'rgb(0, 0, 0)';
-      signaturePad.minWidth = 1;
-      signaturePad.maxWidth = 2;
-      
-      // Clear signature
-      clearButton.addEventListener('click', function() {
-        signaturePad.clear();
-        signatureDataField.value = '';
-      });
-      
-      // Undo last stroke
-      undoButton.addEventListener('click', function() {
-        const data = signaturePad.toData();
-        if (data) {
-          data.pop(); // remove the last dot or line
-          signaturePad.fromData(data);
-          signatureDataField.value = JSON.stringify(data);
-        }
-      });
-      
-      // Update hidden field when signature changes
-      canvas.addEventListener('mouseup', updateSignatureData);
-      canvas.addEventListener('touchend', updateSignatureData);
-      
-      function updateSignatureData() {
-        if (!signaturePad.isEmpty()) {
-          signatureDataField.value = JSON.stringify(signaturePad.toData());
-        }
-      }
-      
-      // Handle form submission
-      form.addEventListener('submit', function(e) {
-        if (signaturePad.isEmpty()) {
-          if (!confirm('You haven\'t provided a signature. Are you sure you want to submit without signing?')) {
-            e.preventDefault();
-            return false;
-          }
-        } else {
-          // Save the signature data
-          signatureDataField.value = JSON.stringify(signaturePad.toData());
-        }
-      });
-      
-      // If editing an existing entry with a signature, load it
-      {% if form.instance.signature_data %}
-        try {
-          const signatureData = {{ form.instance.signature_data|safe }};
-          signaturePad.fromData(signatureData);
-          signatureDataField.value = JSON.stringify(signatureData);
-        } catch (e) {
-          console.error('Error loading signature:', e);
-        }
-      {% endif %}
-    });
-  </script>
-  
-  <style>
-    #signatureCanvas {
-      touch-action: none; /* Prevents scrolling on touch devices while drawing */
-      cursor: crosshair;
+<style>
+/* Save Button Styles */
+.btn-save-all {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+    margin: 10px;
+}
+
+.btn-save-all:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+    background: linear-gradient(135deg, #229954, #27ae60);
+}
+
+.btn-save-all:active {
+    transform: translateY(0);
+}
+
+.btn-save-draft, .btn-preview {
+    background: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0 5px;
+    transition: background 0.3s ease;
+}
+
+.btn-save-draft:hover { background: #2980b9; }
+.btn-preview:hover { background: #2980b9; }
+
+/* Loading animation */
+.btn-saving {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important;
+    cursor: not-allowed !important;
+}
+
+.btn-saving::after {
+    content: ' ⏳';
+}
+
+/* Success state */
+.btn-success {
+    background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+}
+
+.btn-success::after {
+    content: ' ✓';
+}
+</style>
+<script>
+// SVG Signature Method
+document.addEventListener('DOMContentLoaded', function() {
+    const svg = document.getElementById('svg-signature');
+    const clearBtn = document.getElementById('clear-svg-signature');
+    const statusEl = document.getElementById('svg-status');
+    const dataField = document.getElementById('svg-signature-data');
+    
+    let isDrawing = false;
+    let path = null;
+    
+    // Create drawing path
+    function startDrawing(e) {
+        isDrawing = true;
+        const point = getSVGPoint(e);
+        
+        // Create new path
+        path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('stroke', 'black');
+        path.setAttribute('stroke-width', '3');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('d', `M ${point.x} ${point.y}`);
+        
+        svg.appendChild(path);
     }
-  </style>
+    
+    function draw(e) {
+        if (!isDrawing || !path) return;
+        
+        const point = getSVGPoint(e);
+        const currentD = path.getAttribute('d');
+        path.setAttribute('d', currentD + ` L ${point.x} ${point.y}`);
+        
+        updateSVGSignatureData();
+    }
+    
+    function stopDrawing() {
+        isDrawing = false;
+        updateSVGSignatureData();
+    }
+    
+    function getSVGPoint(e) {
+        const rect = svg.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+    
+    function clearSVGSignature() {
+        // Remove all drawn paths
+        const paths = svg.querySelectorAll('path');
+        paths.forEach(p => p.remove());
+        
+        dataField.value = '';
+        statusEl.textContent = 'Signature cleared';
+        statusEl.style.color = '#e74c3c';
+    }
+    
+    function updateSVGSignatureData() {
+        const paths = svg.querySelectorAll('path');
+        if (paths.length > 0) {
+            const svgString = new XMLSerializer().serializeToString(svg);
+            dataField.value = 'data:image/svg+xml;base64,' + btoa(svgString);
+            statusEl.textContent = 'Signature saved ✓';
+            statusEl.style.color = '#27ae60';
+        }
+    }
+    
+    // Event listeners
+    svg.addEventListener('mousedown', startDrawing);
+    svg.addEventListener('mousemove', draw);
+    svg.addEventListener('mouseup', stopDrawing);
+    svg.addEventListener('mouseleave', stopDrawing);
+    
+    clearBtn.addEventListener('click', clearSVGSignature);
+});
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const saveButton = document.getElementById('save-all-button');
+    const saveDraftButton = document.getElementById('save-draft');
+    const previewButton = document.getElementById('preview-entry');
+    const saveStatus = document.getElementById('save-status');
+    const form = document.querySelector('form');
+    const validationDiv = document.getElementById('form-validation');
+    const validationErrors = document.getElementById('validation-errors');
+
+    if (!saveButton || !form) {
+        console.error('Save button or form not found!');
+        return;
+    }
+
+    // Form validation function
+    function validateForm() {
+        const errors = [];
+        const requiredFields = form.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                const fieldName = field.labels?.[0]?.textContent || field.name;
+                errors.push(`${fieldName} is required`);
+            }
+        });
+
+        // Check signature
+        const signatureData = document.getElementById('signature-data');
+        if (signatureData && !signatureData.value) {
+            errors.push('Signature is required');
+        }
+
+        return errors;
+    }
+
+    // Update save button state based on form validity
+    function updateSaveButtonState() {
+        const errors = validateForm();
+        const isValid = errors.length === 0;
+
+        if (isValid) {
+            saveButton.disabled = false;
+            saveStatus.innerHTML = '✅ All required fields are completed. Ready to save!';
+            saveStatus.style.color = '#27ae60';
+            validationDiv.style.display = 'none';
+        } else {
+            saveButton.disabled = false; // Still allow saving but show warnings
+            saveStatus.innerHTML = '⚠️ Some required fields are missing, but you can still save.';
+            saveStatus.style.color = '#f39c12';
+        }
+    }
+
+    // Real-time form validation
+    form.addEventListener('input', function() {
+        updateSaveButtonState();
+    });
+
+    // Save with animation and validation
+    saveButton.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent immediate submit to show animation
+        
+        const errors = validateForm();
+        
+        if (errors.length > 0) {
+            // Show validation errors but allow saving
+            validationErrors.innerHTML = '';
+            errors.forEach(error => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                li.style.color = '#e74c3c';
+                validationErrors.appendChild(li);
+            });
+            
+            validationDiv.style.display = 'block';
+            validationDiv.style.background = '#ffeaa7';
+            validationDiv.style.border = '1px solid #fdcb6e';
+            
+            // Ask for confirmation to save anyway
+            if (confirm('Some required fields are missing. Save anyway?')) {
+                proceedWithSave();
+            }
+        } else {
+            proceedWithSave();
+        }
+    });
+
+    function proceedWithSave() {
+        // Show saving state
+        saveButton.classList.add('btn-saving');
+        saveButton.disabled = true;
+        saveButton.innerHTML = '💾 SAVING...';
+        saveStatus.innerHTML = '⏳ Saving your entry, please wait...';
+        saveStatus.style.color = '#3498db';
+
+        // Simulate save process (replace with actual form submission)
+        setTimeout(() => {
+            // Submit the form
+            form.submit();
+            
+            // If form doesn't submit, show success state
+            setTimeout(() => {
+                saveButton.classList.remove('btn-saving');
+                saveButton.classList.add('btn-success');
+                saveButton.innerHTML = '💾 SAVED SUCCESSFULLY!';
+                saveStatus.innerHTML = '✅ Entry saved successfully! Redirecting...';
+                saveStatus.style.color = '#27ae60';
+            }, 1000);
+            
+        }, 1500);
+    }
+
+    // Save Draft functionality
+    saveDraftButton.addEventListener('click', function() {
+        // Add a hidden field to indicate draft
+        let draftField = document.getElementById('draft-field');
+        if (!draftField) {
+            draftField = document.createElement('input');
+            draftField.type = 'hidden';
+            draftField.name = 'is_draft';
+            draftField.id = 'draft-field';
+            draftField.value = 'true';
+            form.appendChild(draftField);
+        }
+        
+        saveButton.click(); // Use the main save logic
+        saveStatus.innerHTML = '💾 Saving as draft...';
+    });
+
+    // Preview functionality
+    previewButton.addEventListener('click', function() {
+        // Collect form data for preview
+        const formData = new FormData(form);
+        const previewData = {};
+        
+        for (let [key, value] of formData.entries()) {
+            previewData[key] = value;
+        }
+        
+        // Store in sessionStorage for preview page
+        sessionStorage.setItem('entryPreview', JSON.stringify(previewData));
+        
+        // Open preview in new window (you'll need to create a preview page)
+        window.open('/preview-entry/', 'preview', 'width=800,height=600');
+        
+        saveStatus.innerHTML = '👁️ Opening preview...';
+    });
+
+    // Initialize button state
+    updateSaveButtonState();
+
+    // Add keyboard shortcut (Ctrl + S)
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveButton.click();
+        }
+    });
+
+    console.log('Save button functionality loaded successfully!');
+});
+
+// Form submission handler
+function handleFormSubmit() {
+    const saveButton = document.getElementById('save-all-button');
+    const signatureData = document.getElementById('signature-data');
+    
+    // Double-check signature
+    if (signatureData && !signatureData.value) {
+        if (!confirm('No signature provided. Save without signature?')) {
+            return false; // Cancel submission
+        }
+    }
+    
+    // Show final saving state
+    if (saveButton) {
+        saveButton.innerHTML = '💾 FINALIZING SAVE...';
+        saveButton.disabled = true;
+    }
+    
+    return true; // Allow form submission
+}
+
+// Auto-save every 2 minutes (optional)
+setInterval(() => {
+    const form = document.getElementById('registry-form');
+    if (form) {
+        const anyValue = Array.from(form.elements).some(el => el.value);
+        if (anyValue) {
+            console.log('Auto-save triggered');
+            // You could implement auto-save to localStorage here
+        }
+    }
+}, 120000); // 2 minutes
+</script>
 </body>
 </html>
