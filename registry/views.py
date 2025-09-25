@@ -31,6 +31,13 @@ from django.http import JsonResponse
 
 
 
+
+
+
+
+
+
+
 def dashboard_data(request):
     """
     Efficiently aggregate registry statistics and return JSON
@@ -120,62 +127,6 @@ def dashboard(request):
     return render(request, "registry/registry_dashboard.html")
 
 
-def pdf_preview(request):
-    template_path = "registry/pdf_preview.html"
-    context = {
-        "request": request,  # so you can still use {{ request }} in template
-    }
-
-    # Render HTML from template
-    template = get_template(template_path)
-    html = template.render(context)
-
-    # Create response as PDF
-    response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = 'inline; filename="preview.pdf"'
-
-    # Generate PDF with xhtml2pdf and link_callback
-    pisa_status = pisa.CreatePDF(
-        html, dest=response, link_callback=link_callback
-    )
-
-    if pisa_status.err:
-        return HttpResponse("We had some errors <pre>" + html + "</pre>")
-    return response
-
-def registry_create(request):
-    if request.method == "POST":
-        form = RegistryForm(request.POST, request.FILES)
-        if form.is_valid():
-            entry = form.save(commit=False)
-            
-            # Process signature data
-            signature_data = request.POST.get('signature_data', '')
-            if signature_data:
-                try:
-                    # Convert base64 to image file
-                    format, imgstr = signature_data.split(';base64,') 
-                    ext = format.split('/')[-1] 
-                    
-                    # Create image file
-                    signature_file = ContentFile(
-                        base64.b64decode(imgstr), 
-                        name=f"signature_{slugify(entry.names)}_{slugify(entry.surname)}.{ext}"
-                    )
-                    
-                    # Save to model
-                    entry.signature_image = signature_file
-                    
-                except Exception as e:
-                    print(f"Signature processing error: {e}")
-                    # Continue without signature if there's an error
-            
-            entry.save()
-            return redirect('registry_list')
-    else:
-        form = RegistryForm()
-    return render(request, 'registry/registry_form.html', {'form': form})
-
 def registry_update(request, pk):
     entry = get_object_or_404(RegistryEntry, pk=pk)
     if request.method == "POST":
@@ -204,28 +155,34 @@ def registry_update(request, pk):
     return render(request, 'registry/registry_form.html', {'form': form})
 
 # Your pdf_preview view rewritten
+
+
 def pdf_preview(request):
+    # ✅ Query the data for the table
+    entries = RegistryEntry.objects.all().order_by("surname")
+
+    # ✅ Load the HTML template
     template_path = "registry/pdf_preview.html"
     context = {
-        "request": request,  # so you can still use request in template
+        "request": request,
+        "entries": entries,   # This is the missing piece!
     }
 
-    # Render HTML with template + context
+    # ✅ Render the HTML with context
     template = get_template(template_path)
     html = template.render(context)
 
-    # Create response
+    # ✅ Generate PDF
     response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = 'inline; filename="preview.pdf"'
+    response["Content-Disposition"] = 'inline; filename="beneficiary_register.pdf"'
 
-    # Generate PDF using xhtml2pdf and link_callback
-    pisa_status = pisa.CreatePDF(
-        html, dest=response, link_callback=link_callback
-    )
+    pisa_status = pisa.CreatePDF(html, dest=response, link_callback=link_callback)
 
     if pisa_status.err:
-        return HttpResponse("We had some errors <pre>" + html + "</pre>")
+        return HttpResponse("PDF generation error.<pre>" + html + "</pre>")
+    
     return response
+
 
     # Create a PDF in memory
     result = io.BytesIO()
@@ -504,64 +461,75 @@ def registry_view(request):
     return render(request, 'registry_form.html', {'form': form})
 
 # 1️⃣ Registry List with Search + Filter + Summaries
-from django.contrib import admin
+from django.shortcuts import render
 from django.http import HttpResponse
 import csv
-from datetime import timedelta
-from collections import Counter
-from django.utils import timezone
-from django.db.models import Q
-from django.template.loader import get_template
 from xhtml2pdf import pisa
-
+from django.template.loader import get_template
 from .models import RegistryEntry
-
-# ==================== EXPORT FUNCTIONS ====================
-
-def export_as_pdf(modeladmin, request, queryset):
-    """
-    Export selected RegistryEntry objects to PDF using pdf_preview.html template.
-    """
-    template = get_template("registry/pdf_preview.html")
-    context = {
-        "entries": queryset,
-        "total_count": queryset.count(),
-    }
-
-    html = template.render(context)
-    download = request.GET.get("download", "false").lower() == "true"
-    response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = (
-        'attachment; filename="registry_report.pdf"' if download else 'inline; filename="registry_report.pdf"'
-    )
-
-    pisa_status = pisa.CreatePDF(html, dest=response)
-    if pisa_status.err:
-        return HttpResponse("Error generating PDF", status=500)
-    return response
-
-export_as_pdf.short_description = "Export selected entries as PDF"
+from datetime import datetime, timedelta
 
 
-def export_csv(modeladmin, request, queryset):
-    """
-    Export selected RegistryEntry objects to CSV.
-    """
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="registry_entries.csv"'
-    
-    writer = csv.writer(response)
-    writer.writerow(['Names', 'Surname', 'ID/DOB', 'Gender', 'Social Grant', 'Tish Area'])
-    
-    for entry in queryset:
-        writer.writerow([
-            entry.names, entry.surname, entry.id_no_or_dob or '',
-            entry.gender, entry.social_grant, entry.tish_area
-        ])
-    
-    return response
 
-export_csv.short_description = "Export selected entries as CSV"
+def registry_export(request):
+    # Filter entries based on query params
+    entries = RegistryEntry.objects.all()
+    search = request.GET.get("search", "")
+    gender = request.GET.get("gender", "")
+    grant = request.GET.get("grant", "")
+    tish_area = request.GET.get("tish_area", "")
+    export_format = request.GET.get("export_format", "pdf")
+
+    if search:
+        entries = entries.filter(
+            Q(names__icontains=search) |
+            Q(surname__icontains=search) |
+            Q(id_no_or_dob__icontains=search)
+        )
+    gender_filter = request.GET.get("gender")
+    if gender_filter:
+        entries = entries.filter(gender=gender_filter)
+
+    if grant:
+        entries = entries.filter(social_grant=grant)
+    if tish_area:
+        entries = entries.filter(tish_area=tish_area)
+
+    # Time-based filters
+    now = datetime.now()
+    if export_format == "day":
+        entries = entries.filter(created_at__date=now.date())
+    elif export_format == "week":
+        start_week = now - timedelta(days=now.weekday())
+        entries = entries.filter(created_at__date__gte=start_week.date())
+    elif export_format == "month":
+        entries = entries.filter(created_at__month=now.month, created_at__year=now.year)
+    elif export_format == "year":
+        entries = entries.filter(created_at__year=now.year)
+
+    if export_format in ["pdf", "day", "week", "month", "year"]:
+        template = get_template("registry/pdf_preview.html")
+        html = template.render({"entries": entries})
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = 'inline; filename="registry_report.pdf"'
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        if pisa_status.err:
+            return HttpResponse("Error generating PDF", status=500)
+        return response
+
+    elif export_format == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="registry_entries.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Names', 'Surname', 'ID/DOB', 'Gender', 'Social Grant', 'Tish Area'])
+        for entry in entries:
+            writer.writerow([entry.names, entry.surname, entry.id_no_or_dob or '',
+                             entry.gender, entry.social_grant, entry.tish_area])
+        return response
+
+    else:
+        return HttpResponse("Invalid export format", status=400)
+
 
 
 def _generate_date_report(queryset, period_type):
@@ -808,6 +776,8 @@ def registry_view(request):
 def registry_list(request):
     entries = RegistryEntry.objects.all()
 
+    
+
     # Get search/filter params
     search = request.GET.get('search', '')
     gender_filter = request.GET.get('gender', '')
@@ -841,6 +811,8 @@ def registry_list(request):
         'grant_counts': dict(grant_counts),
         'tish_counts': dict(tish_counts),
     }
+
+    
     return render(request, 'registry/registry_list.html', context)
 
 

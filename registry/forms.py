@@ -2,6 +2,27 @@
 from django import forms
 from .models import RegistryEntry
 
+
+
+TISH_CHOICES = [
+    ('Hostel', 'Hostel'),
+    ('Informal Settlement', 'Informal Settlement'),
+    ('Township', 'Township'),
+    ]
+
+class RegistryEntryForm(forms.ModelForm):
+    tish_area = forms.ChoiceField(
+    choices=TISH_CHOICES,
+    widget=forms.Select(attrs={
+        'class': 'w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent'
+    })
+    )
+
+
+    class Meta:
+        model = RegistryEntry
+        fields = '__all__'  # or specify your fields
+
 class RegistryForm(forms.ModelForm):
     signature_data = forms.CharField(
         required=False,

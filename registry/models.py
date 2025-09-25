@@ -4,6 +4,7 @@ class RegistryEntry(models.Model):
     GENDER_CHOICES = [
         ('Male', 'Male'),
         ('Female', 'Female'),
+        ('LGBTQ+', 'LGBTQ+'),
         ('Other', 'Other'),
     ]
     RACE_CHOICES = [
@@ -12,17 +13,23 @@ class RegistryEntry(models.Model):
         ('White', 'White'),
         ('Indian', 'Indian'),
     ]
+
     TISH_CHOICES = [
-        ('Area 1', 'Area 1'),
-        ('Area 2', 'Area 2'),
-        ('Area 3', 'Area 3'),
-    ]
-    GRANT_CHOICES = [
-        ('Child Grant', 'Child Grant'),
-        ('Old Age Pension', 'Old Age Pension'),
-        ('Disability Grant', 'Disability Grant'),
+    ('Hostel', 'Hostel'),
+    ('Informal Settlement', 'Informal Settlement'),
+    ('Township', 'Township'),
     ]
 
+    
+    GRANT_CHOICES = [
+        ('None', 'None'),
+        ('Old Age Pension', 'Old Age Pension'),
+        ('Disability Grant', 'Disability Grant'),
+        ('Child Grant', 'Child Grant'),
+        ('SRD', 'SRD'),
+        ('CSG', 'CSG'),
+    ]
+    created_at = models.DateTimeField(auto_now_add=True)
     names = models.CharField(max_length=200)
     surname = models.CharField(max_length=200)
     id_no_or_dob = models.CharField(max_length=50)
@@ -32,7 +39,12 @@ class RegistryEntry(models.Model):
     
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True, null=True)
     race = models.CharField(max_length=50, choices=RACE_CHOICES, blank=True, null=True)
-    tish_area = models.CharField(max_length=100, choices=TISH_CHOICES, blank=True, null=True)
+    tish_area = models.CharField(
+    max_length=50,
+    choices=TISH_CHOICES,
+    default='Hostel'
+)
+
     social_grant = models.CharField(max_length=100, choices=GRANT_CHOICES, blank=True, null=True)
     
     disability = models.BooleanField(default=False)

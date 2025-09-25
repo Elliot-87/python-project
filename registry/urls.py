@@ -14,6 +14,10 @@ urlpatterns = [
     # PDF preview + export
     path("export/pdf/preview/", views.pdf_preview, name="pdf_preview"),
     path("export/pdf/", views.export_pdf, name="export_pdf"),
+    path("registry/export/", views.registry_export, name="pdf_preview"),
+
+
+    
 
     # Dashboard
    path("dashboard/", views.dashboard, name="dashboard"),          # Serves HTML page

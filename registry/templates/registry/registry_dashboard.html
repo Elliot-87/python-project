@@ -81,9 +81,15 @@
   </style>
 </head>
 <body>
+  <main class="p-4 md:p-6">
+    {% include 'registry/_home_button.html' %}
+    
+    <!-- Your dashboard content here -->
+
+
   <div class="dashboard-header">
     <h1>Community Registry Dashboard</h1>
-    <p>Real-time metrics from your registry data</p>
+    <p>Real-time metrics • Real-time Community Service</p>
   </div>
 
   <section class="grid">
@@ -255,6 +261,7 @@
       <ul class="stats-list" id="overall-stats"></ul>
     </div>
   </section>
+  </main>
 
   <div class="dashboard-footer">
     <p>Data updated in real-time • Powered by AI-AbaNtu Intelligence</p>

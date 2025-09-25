@@ -170,6 +170,12 @@ select {
     </style>
 </head>
 <body>
+    <main class="p-4 md:p-6">
+    {% include 'registry/_home_button.html' %}
+    
+    <!-- Your dashboard content here -->
+
+
     <div class="form-container">
         <form method="post" id="registry-form" enctype="multipart/form-data" onsubmit="return handleFormSubmit()">
     {% csrf_token %}
@@ -309,7 +315,7 @@ select {
         </div>
     </div>
 </div>
-
+</main>
 <style>
 /* Save Button Styles */
 .btn-save-all {

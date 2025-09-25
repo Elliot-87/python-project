@@ -71,7 +71,7 @@ def export_csv(modeladmin, request, queryset):
     writer = csv.writer(response)
     writer.writerow([
         'Names', 'Surname', 'ID/DOB', 'Gender', 'Disability', 
-        'Physical Address', 'Area Type', 'Ward No', 'Contact Number',
+        'Physical Address', 'TISH Area', 'Ward No', 'Contact Number',
         'Race', 'Service User', 'Social Grant', 'Cooperative Member',
         'Created Date'
     ])

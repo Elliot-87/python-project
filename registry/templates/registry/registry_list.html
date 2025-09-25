@@ -188,6 +188,7 @@
         <i class="fas fa-plus-circle"></i>
         <span>Add New Entry</span>
       </a>
+      {% if user.is_superuser %}
 
   <a href="{% url 'dashboard' %}" 
          class="btn-secondary px-4 py-2 text-white rounded-lg shadow-md flex items-center justify-center gap-2">
@@ -201,7 +202,34 @@
     <span>Admin Panel</span>
 </a>
 
+   <div class="flex items-center gap-3">
+  <form action="{% url 'pdf_preview' %}" method="get" target="_blank" class="flex items-center gap-2">
+    
+    <!-- Export Dropdown -->
+    <div class="relative">
+      <select name="export_format" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg leading-tight focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+        <option value="pdf">📄 Export PDF</option>
+        <option value="csv">📊 Export CSV</option>
+        <option value="day">📆 Daily</option>
+        <option value="week">📆 Weekly</option>
+        <option value="month">📆 Monthly</option>
+        <option value="year">📆 Yearly</option>
+      </select>
+      <!-- Dropdown arrow -->
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+        <i class="fas fa-chevron-down"></i>
+      </div>
     </div>
+
+    <!-- Export Button -->
+    <button type="submit" class="btn-primary px-4 py-2.5 text-white rounded-lg shadow-md flex items-center gap-2 hover:shadow-lg transition-all">
+      <i class="fas fa-file-export"></i>
+      <span>Export</span>
+    </button>
+
+  </form>
+</div>
+{% endif %}
   </header>
 
 
@@ -233,20 +261,27 @@
           </div>
         </div>
 
-        <!-- Gender Filter -->
-        <div>
-          <label for="gender" class="block text-sm font-medium text-gray-600 mb-1">Gender</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fas fa-venus-mars text-gray-400"></i>
-            </div>
-            <select id="gender" name="gender" class="w-full pl-10 mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent">
-              <option value="">All Genders</option>
-              <option value="Male" {% if request.GET.gender == "Male" %}selected{% endif %}>Male</option>
-              <option value="Female" {% if request.GET.gender == "Female" %}selected{% endif %}>Female</option>
-            </select>
-          </div>
-        </div>
+       <!-- Gender Filter -->
+<div>
+  <label for="gender" class="block text-sm font-medium text-gray-600 mb-1">Gender</label>
+  <div class="relative">
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <i class="fas fa-venus-mars text-gray-400"></i>
+    </div>
+    <select 
+      id="gender" 
+      name="gender" 
+      class="w-full pl-10 mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition duration-150 ease-in-out"
+      onchange="this.form.submit()"
+    >
+      <option value="">All Genders</option>
+      <option value="Male" {% if request.GET.gender == "Male" %}selected{% endif %}>Male</option>
+      <option value="Female" {% if request.GET.gender == "Female" %}selected{% endif %}>Female</option>
+      <option value="Other" {% if request.GET.gender == "Other" %}selected{% endif %}>Other</option>
+      <option value="LGBTQ+" {% if request.GET.gender == "LGBTQ+" %}selected{% endif %}>LGBTQ+</option>
+    </select>
+  </div>
+</div>
 
         <!-- Grant Filter -->
         <div>
@@ -264,21 +299,23 @@
           </div>
         </div>
 
-        <!-- TISH Filter -->
-        <div>
-          <label for="tish_area" class="block text-sm font-medium text-gray-600 mb-1">TISH Area</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fas fa-map-marker-alt text-gray-400"></i>
-            </div>
-            <select id="tish_area" name="tish_area" class="w-full pl-10 mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent">
-              <option value="">All Areas</option>
-              {% for area, _ in tish_counts.items %}
-                <option value="{{ area }}" {% if request.GET.tish_area == area %}selected{% endif %}>{{ area }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
+<!-- TISH Area Filter -->
+<div class="flex items-center space-x-2">
+  <label for="tish_area" class="text-sm font-medium text-gray-700">TISH Area:</label>
+  <select 
+      name="tish_area" 
+      id="tish_area" 
+      class="block w-52 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition duration-150"
+      onchange="this.form.submit()"
+  >
+      <option value="">All Areas</option>
+      <option value="Hostel" {% if request.GET.tish_area == 'Hostel' %}selected{% endif %}>Hostel</option>
+      <option value="Informal Settlement" {% if request.GET.tish_area == 'Informal Settlement' %}selected{% endif %}>Informal Settlement</option>
+      <option value="Township" {% if request.GET.tish_area == 'Township' %}selected{% endif %}>Township</option>
+  </select>
+</div>
+
+
 
         <!-- Buttons -->
         <div class="flex flex-col md:flex-row gap-2 md:col-span-5 mt-2">
@@ -294,6 +331,7 @@
           </a>
         </div>
       </form>
+      
     </section>
 
     <!-- Results Count -->
@@ -304,7 +342,9 @@
       </p>
       
       <!-- Export Options -->
-      
+    <!-- Export Options -->
+
+
     </div>
 
     <!-- Registry Table -->
@@ -451,31 +491,28 @@
   </main>
 
   <script>
-    // Simple JavaScript for better UX
-    document.addEventListener('DOMContentLoaded', function() {
-      // Add loading state to buttons
-      const forms = document.querySelectorAll('form');
-      forms.forEach(form => {
-        form.addEventListener('submit', function() {
-          const submitBtn = this.querySelector('button[type="submit"]');
-          if (submitBtn) {
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            submitBtn.disabled = true;
-          }
-        });
-      });
-      
-      // Add tooltips to action buttons
-      const editButtons = document.querySelectorAll('a[href*="update"]');
-      editButtons.forEach(btn => {
-        btn.setAttribute('title', 'Edit entry');
-      });
-      
-      const deleteButtons = document.querySelectorAll('a[href*="delete"]');
-      deleteButtons.forEach(btn => {
-        btn.setAttribute('title', 'Delete entry');
-      });
+    /document.addEventListener('DOMContentLoaded', function() {
+
+  // 1️⃣ Spinner only for forms that stay on the same page
+  const localForms = document.querySelectorAll('form[data-loading="true"]');
+  localForms.forEach(form => {
+    form.addEventListener('submit', function() {
+      const submitBtn = this.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        submitBtn.disabled = true;
+      }
     });
+  });
+
+  // 2️⃣ Tooltips for edit/delete buttons
+  const editButtons = document.querySelectorAll('a[href*="update"]');
+  editButtons.forEach(btn => btn.setAttribute('title', 'Edit entry'));
+
+  const deleteButtons = document.querySelectorAll('a[href*="delete"]');
+  deleteButtons.forEach(btn => btn.setAttribute('title', 'Delete entry'));
+
+});
   </script>
 </body>
 </html>
