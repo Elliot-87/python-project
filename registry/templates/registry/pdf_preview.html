@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -172,22 +173,15 @@
 </head>
 <body>
 <!-- Debug Section - Remove after testing -->
-<div style="border: 2px solid red; padding: 10px; margin: 10px; background: #ffe6e6;">
-    <strong>Logo Debug Info:</strong><br>
-    {% with logo_path="file:///C:/Users/Admin/Desktop/repo/python-project/static/images/logo.png" %}
-    Path: {{ logo_path }}<br>
-    {% endwith %}
-</div>
+
   <!-- Header -->
   <div class="header-container">
       <div class="logo-section">
     <div class="logo-placeholder">
-        <svg width="70" height="70" viewBox="0 0 100 100">
-            <!-- Your logo as SVG code -->
-            <rect width="100" height="100" fill="#2c3e50" rx="10"/>
-            <text x="50" y="55" text-anchor="middle" fill="white" font-family="Arial" font-size="16" font-weight="bold">BCS</text>
-            <text x="50" y="75" text-anchor="middle" fill="#3498db" font-family="Arial" font-size="10">LOGO</text>
-        </svg>
+       <div class="logo-container">
+    <img src="{% static 'images/logo.png' %}" alt="Company Logo" style="max-height: 80px;">
+
+</div>
     </div>
     <div style="font-size: 7pt; color: #7f8c8d;">Official Seal</div>
 </div>
@@ -246,6 +240,9 @@
               <td class="center compact">{{ entry.cooperative_member|yesno:"Yes,No" }}</td>
               <td class="center compact">{% if entry.signature_image %}✓{% else %}—{% endif %}</td>
           </tr>
+
+
+          
           {% empty %}
           <tr>
               <td colspan="15" class="center" style="color:#999; padding:15px;">

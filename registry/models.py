@@ -1,83 +1,51 @@
-# registry/models.py
 from django.db import models
 
 class RegistryEntry(models.Model):
-    # Define choices FIRST, before using them in fields
     GENDER_CHOICES = [
         ('Male', 'Male'),
         ('Female', 'Female'),
         ('Other', 'Other'),
     ]
-    
     RACE_CHOICES = [
-        ('Black', 'Black'),
+        ('African', 'African'),
+        ('Coloured', 'Coloured'),
         ('White', 'White'),
-        ('Colored', 'Colored'),
         ('Indian', 'Indian'),
-        ('Other', 'Other'),
     ]
-    
     TISH_CHOICES = [
-        ('', 'Select Area Type'),
-        ('Hostel', 'Hostel'),
-        ('Township', 'Township'), 
-        ('Informal Settlement', 'Informal Settlement'),
+        ('Area 1', 'Area 1'),
+        ('Area 2', 'Area 2'),
+        ('Area 3', 'Area 3'),
     ]
-    
-    SOCIAL_GRANT_CHOICES = [
-        ('None', 'No Social Grant'),
-        ('CSG', 'Child Support Grant'),
-        ('SRD', 'Social Relief Distress'),
-        ('Older Persons', 'Older Persons Grant'),
-        ('Disability', 'Disability Grant'),
-        ('Foster Care', 'Foster Care Grant'),
-        ('Other', 'Other Grant'),
+    GRANT_CHOICES = [
+        ('Child Grant', 'Child Grant'),
+        ('Old Age Pension', 'Old Age Pension'),
+        ('Disability Grant', 'Disability Grant'),
     ]
 
-    # Personal Information
-    names = models.CharField(max_length=100)
-    surname = models.CharField(max_length=100)
-    id_no_or_dob = models.CharField(max_length=50, verbose_name="ID Number or Date of Birth")
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
+    names = models.CharField(max_length=200)
+    surname = models.CharField(max_length=200)
+    id_no_or_dob = models.CharField(max_length=50)
+    physical_address = models.TextField(blank=True, null=True)
+    ward_no = models.CharField(max_length=50, blank=True, null=True)
+    contact_number = models.CharField(max_length=50, blank=True, null=True)
     
-    # Residence Information
-    physical_address = models.TextField(blank=True)
-    tish_area = models.CharField(
-        max_length=50, 
-        choices=TISH_CHOICES,
-        blank=True,
-        verbose_name="TISH Area"
-    )
-    ward_no = models.CharField(max_length=20, blank=True, verbose_name="Ward Number")
+    gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True, null=True)
+    race = models.CharField(max_length=50, choices=RACE_CHOICES, blank=True, null=True)
+    tish_area = models.CharField(max_length=100, choices=TISH_CHOICES, blank=True, null=True)
+    social_grant = models.CharField(max_length=100, choices=GRANT_CHOICES, blank=True, null=True)
     
-    # Contact & Demographics
-    contact_number = models.CharField(max_length=20, blank=True)
-    race = models.CharField(max_length=20, choices=RACE_CHOICES, blank=True)
-    
-    # Status Information
     disability = models.BooleanField(default=False)
-    recovering_service_user = models.BooleanField(default=False, verbose_name="Recovering Service User")
-    social_grant = models.CharField(
-        max_length=50,
-        choices=SOCIAL_GRANT_CHOICES,
-        default='None',
-        blank=True,
-        verbose_name="Social Grant Type"
-    )
-    cooperative_member = models.BooleanField(default=False, verbose_name="Cooperative Member")
+    recovering_service_user = models.BooleanField(default=False)
+    cooperative_member = models.BooleanField(default=False)
+
+    signature_image = models.FileField(upload_to='signatures/', blank=True, null=True)
     
-    # Signature
-    signature_image = models.ImageField(upload_to='signatures/', blank=True, null=True)
-    signature_data = models.TextField(blank=True)
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
+    try:
+        from django.db.models import JSONField
+    except ImportError:
+        from django.contrib.postgres.fields import JSONField
+    signature_data = JSONField(blank=True, null=True)
+
     def __str__(self):
         return f"{self.names} {self.surname}"
-    
-    class Meta:
-        verbose_name = "Registry Entry"
-        verbose_name_plural = "Registry Entries"
-        ordering = ['-created_at']

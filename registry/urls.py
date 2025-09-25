@@ -1,5 +1,8 @@
 # registry/urls.py
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
 from . import views
 
 urlpatterns = [
@@ -13,6 +16,12 @@ urlpatterns = [
     path("export/pdf/", views.export_pdf, name="export_pdf"),
 
     # Dashboard
-    path("dashboard/", views.dashboard, name="dashboard"),
-    path("dashboard-data/", views.dashboard_data, name="dashboard_data"),
+   path("dashboard/", views.dashboard, name="dashboard"),          # Serves HTML page
+   path("dashboard-data/", views.dashboard_data, name="dashboard_data"),  # Serves JSON data
+
+    # Admin site
+    path("admin/", admin.site.urls),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

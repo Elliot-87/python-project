@@ -1,4 +1,4 @@
-<!-- registry_form.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Registry Entry</title>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         .form-container {
             max-width: 1200px;
@@ -153,6 +155,18 @@
     }
 }
 
+/* Ensure dropdowns work properly */
+.form-control, .form-select {
+    z-index: 100 !important;
+    position: relative !important;
+}
+
+select {
+    appearance: menulist !important;
+    -webkit-appearance: menulist !important;
+    -moz-appearance: menulist !important;
+}
+
     </style>
 </head>
 <body>
@@ -284,19 +298,10 @@
         
         <!-- Save Button -->
         <button type="submit" id="save-all-button" class="btn-save-all">
-            💾 SAVE ALL ENTRY DETAILS
+            💾 SAVE 
         </button>
         
-        <!-- Additional Save Options -->
-        <div style="margin-top: 15px;">
-            <button type="button" id="save-draft" class="btn-save-draft">
-                💾 Save as Draft
-            </button>
-            
-            <button type="button" id="preview-entry" class="btn-preview">
-                👁️ Preview Before Saving
-            </button>
-        </div>
+       
         
         <!-- Save Status -->
         <div id="save-status" style="margin-top: 15px; font-size: 14px; color: #7f8c8d;">
@@ -365,6 +370,9 @@
 }
 </style>
 <script>
+
+
+
 // SVG Signature Method
 document.addEventListener('DOMContentLoaded', function() {
     const svg = document.getElementById('svg-signature');
@@ -637,6 +645,7 @@ setInterval(() => {
         }
     }
 }, 120000); // 2 minutes
+
 </script>
 </body>
 </html>

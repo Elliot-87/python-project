@@ -173,43 +173,50 @@ def _generate_date_report(queryset, period_type):
 
 @admin.register(RegistryEntry)
 class RegistryEntryAdmin(admin.ModelAdmin):
-    list_display = [
-        'names', 'surname', 'gender', 'race', 'ward_no', 
-        'disability_status', 'social_grant', 'created_display'
-    ]
-    list_filter = [
-        'gender', 'race', 'ward_no', 'disability', 
-        'social_grant', 'recovering_service_user', 
-        'cooperative_member', ('created_at', DateFieldListFilter)
-    ]
-    search_fields = ['names', 'surname', 'id_no_or_dob', 'contact_number']
-    readonly_fields = ['created_at']
-    
-    # ADD ALL ACTIONS HERE - functions are now defined above
-    actions = [
-        export_as_pdf, export_csv, generate_daily_report,
-        generate_weekly_report, generate_monthly_report, generate_yearly_report
-    ]
-    
-    def get_fieldsets(self, request, obj=None):
-        fieldsets = super().get_fieldsets(request, obj)
-        if obj:  # Editing an existing object
-            fieldsets += (('System Information', {
-                'fields': ('created_at',),
-                'classes': ('collapse',)
-            }),)
-        return fieldsets
-    
-    def created_display(self, obj):
-        if obj.created_at:
-            return obj.created_at.strftime('%Y-%m-%d %H:%M')
-        return "No date"
-    created_display.short_description = 'Created'
-    
-    def disability_status(self, obj):
-        return "Yes" if obj.disability else "No"
-    disability_status.short_description = 'Disability'
-    
-    def get_actions(self, request):
-        actions = super().get_actions(request)
-        return actions
+    list_display = (
+        'names',
+        'surname',
+        'id_no_or_dob',
+        'gender',
+        'social_grant',
+        'ward_no',
+        'tish_area',
+        'contact_number',
+        'disability',
+        'recovering_service_user',
+        'cooperative_member',
+    )
+
+    list_filter = (
+        'gender',
+        'social_grant',
+        'tish_area',
+        'ward_no',
+        'disability',
+        'recovering_service_user',
+        'cooperative_member',
+    )
+
+    search_fields = (
+        'names',
+        'surname',
+        'id_no_or_dob',
+    )
+
+    actions = ['export_as_csv']
+
+    def export_as_csv(self, request, queryset):
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename={meta}.csv'
+        writer = csv.writer(response)
+
+        writer.writerow(field_names)
+        for obj in queryset:
+            writer.writerow([getattr(obj, field) for field in field_names])
+
+        return response
+
+    export_as_csv.short_description = "Export Selected Entries as CSV"

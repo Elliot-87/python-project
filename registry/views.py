@@ -25,8 +25,123 @@ from xhtml2pdf import pisa
 from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
+from django.db.models import Count, Case, When, Value, IntegerField
+from django.http import JsonResponse
 
 
+
+
+def dashboard_data(request):
+    """
+    Efficiently aggregate registry statistics and return JSON
+    used by the dashboard frontend.
+    """
+    qs = RegistryEntry.objects.all()
+
+    # Helper: convert queryset of dicts [{'gender': 'M', 'count': 10}, ...] -> { 'M': 10, ... }
+    def counts_from_qs(qs_vals, key_name):
+        return {item[key_name]: item['count'] for item in qs_vals if item.get(key_name) not in (None, '')}
+
+    # 1) Generic text fields (gender, social_grant, tish_area, race, ward_no)
+    gender_counts_qs = qs.values('gender').annotate(count=Count('id'))
+    grant_counts_qs  = qs.values('social_grant').annotate(count=Count('id'))
+    tish_counts_qs   = qs.values('tish_area').annotate(count=Count('id'))
+    race_counts_qs   = qs.values('race').annotate(count=Count('id'))
+    ward_counts_qs   = qs.values('ward_no').annotate(count=Count('id'))
+
+    gender_counts = counts_from_qs(gender_counts_qs, 'gender')
+    grant_counts  = counts_from_qs(grant_counts_qs, 'social_grant')
+    tish_counts   = counts_from_qs(tish_counts_qs, 'tish_area')
+    race_counts   = counts_from_qs(race_counts_qs, 'race')
+    ward_counts   = counts_from_qs(ward_counts_qs, 'ward_no')
+
+    # 2) Boolean fields - count Yes / No
+    disability_counts = {
+        "Yes": qs.filter(disability=True).count(),
+        "No": qs.filter(disability=False).count()
+    }
+    recovering_counts = {
+        "Yes": qs.filter(recovering_service_user=True).count(),
+        "No": qs.filter(recovering_service_user=False).count()
+    }
+    cooperative_counts = {
+        "Yes": qs.filter(cooperative_member=True).count(),
+        "No": qs.filter(cooperative_member=False).count()
+    }
+
+    # 3) Contact counts — entries that have contact_number vs those that don't
+    contact_counts = {
+        "Has Contact": qs.exclude(contact_number__isnull=True).exclude(contact_number__exact='').count(),
+        "No Contact": qs.filter(contact_number__isnull=True).count() + qs.filter(contact_number__exact='').count()
+    }
+
+    # 4) Signature counts — handle if signature_image field exists
+    try:
+        signature_counts = {
+            "Signed": qs.exclude(signature_image__isnull=True).exclude(signature_image__exact='').count(),
+            "Not Signed": qs.filter(signature_image__isnull=True).count() + qs.filter(signature_image__exact='').count()
+        }
+    except Exception:
+        signature_counts = {}
+
+    # 5) Address counts - using physical_address field
+    address_counts = {
+        "Has Address": qs.exclude(physical_address__isnull=True).exclude(physical_address__exact='').count(),
+        "No Address": qs.filter(physical_address__isnull=True).count() + qs.filter(physical_address__exact='').count()
+    }
+
+    # 6) Calculate total participants
+    total_participants = qs.count()
+
+    # 7) Assemble final data dictionary
+    data = {
+        "gender_counts": gender_counts,
+        "grant_counts": grant_counts,
+        "tish_counts": tish_counts,
+        "disability_counts": disability_counts,
+        "race_counts": race_counts,
+        "recovering_counts": recovering_counts,
+        "cooperative_counts": cooperative_counts,
+        "ward_counts": ward_counts,
+        "contact_counts": contact_counts,
+        "signature_counts": signature_counts,
+        "address_counts": address_counts,
+        "total_participants": total_participants,
+    }
+
+    # 8) Return JSON response
+    return JsonResponse(data)
+def dashboard(request):
+    """
+    Render the dashboard template.
+    Make sure this file exists at:
+    registry/templates/registry/registry_dashboard.html
+    """
+    return render(request, "registry/registry_dashboard.html")
+
+
+def pdf_preview(request):
+    template_path = "registry/pdf_preview.html"
+    context = {
+        "request": request,  # so you can still use {{ request }} in template
+    }
+
+    # Render HTML from template
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # Create response as PDF
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'inline; filename="preview.pdf"'
+
+    # Generate PDF with xhtml2pdf and link_callback
+    pisa_status = pisa.CreatePDF(
+        html, dest=response, link_callback=link_callback
+    )
+
+    if pisa_status.err:
+        return HttpResponse("We had some errors <pre>" + html + "</pre>")
+    return response
 
 def registry_create(request):
     if request.method == "POST":
@@ -88,20 +203,29 @@ def registry_update(request, pk):
         form = RegistryForm(instance=entry)
     return render(request, 'registry/registry_form.html', {'form': form})
 
+# Your pdf_preview view rewritten
 def pdf_preview(request):
-    entries = RegistryEntry.objects.all()
-    total_count = entries.count()
-    return render(request, "registry/pdf_preview.html", {
-        "entries": entries,
-        "total_count": total_count,
-        "now": timezone.now(),
-    })
-    # Set up HTTP response
+    template_path = "registry/pdf_preview.html"
+    context = {
+        "request": request,  # so you can still use request in template
+    }
+
+    # Render HTML with template + context
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # Create response
     response = HttpResponse(content_type="application/pdf")
-    if request.GET.get("download"):
-        response['Content-Disposition'] = 'attachment; filename="registry_report.pdf"'
-    else:
-        response['Content-Disposition'] = 'inline; filename="registry_report.pdf"'
+    response["Content-Disposition"] = 'inline; filename="preview.pdf"'
+
+    # Generate PDF using xhtml2pdf and link_callback
+    pisa_status = pisa.CreatePDF(
+        html, dest=response, link_callback=link_callback
+    )
+
+    if pisa_status.err:
+        return HttpResponse("We had some errors <pre>" + html + "</pre>")
+    return response
 
     # Create a PDF in memory
     result = io.BytesIO()
@@ -380,43 +504,145 @@ def registry_view(request):
     return render(request, 'registry_form.html', {'form': form})
 
 # 1️⃣ Registry List with Search + Filter + Summaries
-def registry_list(request):
-    entries = RegistryEntry.objects.all()
+from django.contrib import admin
+from django.http import HttpResponse
+import csv
+from datetime import timedelta
+from collections import Counter
+from django.utils import timezone
+from django.db.models import Q
+from django.template.loader import get_template
+from xhtml2pdf import pisa
 
-    # Get search/filter params
-    search = request.GET.get('search', '')
-    gender_filter = request.GET.get('gender', '')
-    grant_filter = request.GET.get('grant', '')
-    tish_filter = request.GET.get('tish_area', '')
+from .models import RegistryEntry
 
-    # Apply search
-    if search:
-        entries = entries.filter(
-            Q(names__icontains=search) |
-            Q(surname__icontains=search) |
-            Q(id_no_or_dob__icontains=search)
-        )
+# ==================== EXPORT FUNCTIONS ====================
 
-    # Apply filters
-    if gender_filter:
-        entries = entries.filter(gender=gender_filter)
-    if grant_filter:
-        entries = entries.filter(social_grant=grant_filter)
-    if tish_filter:
-        entries = entries.filter(tish_area=tish_filter)
-
-    # Generate summaries (guaranteed Counter dicts)
-    gender_counts = Counter([entry.gender for entry in entries])
-    grant_counts = Counter([entry.social_grant for entry in entries])
-    tish_counts = Counter([entry.tish_area for entry in entries])
-
+def export_as_pdf(modeladmin, request, queryset):
+    """
+    Export selected RegistryEntry objects to PDF using pdf_preview.html template.
+    """
+    template = get_template("registry/pdf_preview.html")
     context = {
-        'entries': entries,
-        'gender_counts': dict(gender_counts),  # convert to dict for template safety
-        'grant_counts': dict(grant_counts),
-        'tish_counts': dict(tish_counts),
+        "entries": queryset,
+        "total_count": queryset.count(),
     }
-    return render(request, 'registry/registry_list.html', context)
+
+    html = template.render(context)
+    download = request.GET.get("download", "false").lower() == "true"
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        'attachment; filename="registry_report.pdf"' if download else 'inline; filename="registry_report.pdf"'
+    )
+
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    if pisa_status.err:
+        return HttpResponse("Error generating PDF", status=500)
+    return response
+
+export_as_pdf.short_description = "Export selected entries as PDF"
+
+
+def export_csv(modeladmin, request, queryset):
+    """
+    Export selected RegistryEntry objects to CSV.
+    """
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="registry_entries.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Names', 'Surname', 'ID/DOB', 'Gender', 'Social Grant', 'Tish Area'])
+    
+    for entry in queryset:
+        writer.writerow([
+            entry.names, entry.surname, entry.id_no_or_dob or '',
+            entry.gender, entry.social_grant, entry.tish_area
+        ])
+    
+    return response
+
+export_csv.short_description = "Export selected entries as CSV"
+
+
+def _generate_date_report(queryset, period_type):
+    now = timezone.now()
+    
+    if period_type == 'daily':
+        start_date = now - timedelta(days=1)
+        filename = f"daily_report_{now.strftime('%Y%m%d')}.csv"
+    elif period_type == 'weekly':
+        start_date = now - timedelta(weeks=1)
+        filename = f"weekly_report_{now.strftime('%Y%m%d')}.csv"
+    elif period_type == 'monthly':
+        start_date = now - timedelta(days=30)
+        filename = f"monthly_report_{now.strftime('%Y%m')}.csv"
+    else:  # yearly
+        start_date = now - timedelta(days=365)
+        filename = f"yearly_report_{now.strftime('%Y')}.csv"
+    
+    date_filtered = queryset.filter(created_at__gte=start_date) if hasattr(queryset.model, 'created_at') else queryset
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    writer = csv.writer(response)
+    writer.writerow([f'{period_type.capitalize()} Registry Report'])
+    writer.writerow(['Period', f'{start_date.strftime("%Y-%m-%d")} to {now.strftime("%Y-%m-%d")}'])
+    writer.writerow(['Total Entries', date_filtered.count()])
+    writer.writerow([])
+    
+    # Summary statistics
+    writer.writerow(['Summary Statistics'])
+    gender_counts = Counter([e.gender for e in date_filtered])
+    grant_counts = Counter([e.social_grant for e in date_filtered])
+    tish_counts = Counter([e.tish_area for e in date_filtered])
+    
+    writer.writerow(['Gender Distribution'])
+    for gender, count in gender_counts.items():
+        writer.writerow([f'  {gender}', count])
+    
+    writer.writerow(['Social Grant Distribution'])
+    for grant, count in grant_counts.items():
+        writer.writerow([f'  {grant}', count])
+    
+    writer.writerow(['Tish Area Distribution'])
+    for area, count in tish_counts.items():
+        writer.writerow([f'  {area}', count])
+    
+    writer.writerow([])
+    writer.writerow(['Detailed Entries'])
+    writer.writerow(['Names', 'Surname', 'ID/DOB', 'Gender', 'Social Grant', 'Tish Area'])
+    
+    for entry in date_filtered:
+        writer.writerow([
+            entry.names, entry.surname, entry.id_no_or_dob or '',
+            entry.gender, entry.social_grant, entry.tish_area
+        ])
+    
+    return response
+
+
+def generate_daily_report(modeladmin, request, queryset):
+    return _generate_date_report(queryset, 'daily')
+
+def generate_weekly_report(modeladmin, request, queryset):
+    return _generate_date_report(queryset, 'weekly')
+
+def generate_monthly_report(modeladmin, request, queryset):
+    return _generate_date_report(queryset, 'monthly')
+
+def generate_yearly_report(modeladmin, request, queryset):
+    return _generate_date_report(queryset, 'yearly')
+
+generate_daily_report.short_description = "Generate Daily Report (selected)"
+generate_weekly_report.short_description = "Generate Weekly Report (selected)"
+generate_monthly_report.short_description = "Generate Monthly Report (selected)"
+generate_yearly_report.short_description = "Generate Yearly Report (selected)"
+
+
+# ==================== ADMIN CLASS ====================
+
+
 
 
 # 2️⃣ Create Entry
@@ -460,24 +686,86 @@ def registry_delete(request, pk):
 
 
 
-def dashboard_data(request):
-    entries = RegistryEntry.objects.all()
-    
-    gender_counts = dict(Counter([entry.gender for entry in entries]))
-    grant_counts = dict(Counter([entry.social_grant for entry in entries]))
-    tish_counts = dict(Counter([entry.tish_area for entry in entries]))
+from django.http import JsonResponse
+from django.db.models import Count
 
+def dashboard_data(request):
+    """
+    Aggregate live registry data for the dashboard.
+    All field names here match the RegistryEntry model.
+    """
+    qs = RegistryEntry.objects.all()
+
+    # Helper to convert annotated querysets to dict
+    def counts_from_qs(qs_vals, key_name):
+        return {item[key_name]: item["count"] for item in qs_vals if item.get(key_name) not in (None, "")}
+
+    # Text/choice fields
+    gender_counts = counts_from_qs(qs.values("gender").annotate(count=Count("id")), "gender")
+    grant_counts = counts_from_qs(qs.values("social_grant").annotate(count=Count("id")), "social_grant")
+    tish_counts = counts_from_qs(qs.values("tish_area").annotate(count=Count("id")), "tish_area")
+    race_counts = counts_from_qs(qs.values("race").annotate(count=Count("id")), "race")
+    ward_counts = counts_from_qs(qs.values("ward_no").annotate(count=Count("id")), "ward_no")
+
+    # Boolean fields
+    disability_counts = {
+        "Yes": qs.filter(disability=True).count(),
+        "No": qs.filter(disability=False).count()
+    }
+    recovering_counts = {
+        "Yes": qs.filter(recovering_service_user=True).count(),
+        "No": qs.filter(recovering_service_user=False).count()
+    }
+    cooperative_counts = {
+        "Yes": qs.filter(cooperative_member=True).count(),
+        "No": qs.filter(cooperative_member=False).count()
+    }
+
+    # Contact info
+    contact_counts = {
+        "Has Contact": qs.exclude(contact_number__isnull=True).exclude(contact_number__exact="").count(),
+        "No Contact": qs.filter(contact_number__isnull=True).count() + qs.filter(contact_number__exact="").count(),
+    }
+
+    # Signature info (safe fallback if field doesn't exist)
+    try:
+        signature_counts = {
+            "Signed": qs.exclude(signature_image__isnull=True).exclude(signature_image__exact="").count(),
+            "Not Signed": qs.filter(signature_image__isnull=True).count() + qs.filter(signature_image__exact="").count(),
+        }
+    except Exception:
+        signature_counts = {}
+
+    # Address info
+    address_counts = {
+        "Has Address": qs.exclude(physical_address__isnull=True).exclude(physical_address__exact="").count(),
+        "No Address": qs.filter(physical_address__isnull=True).count() + qs.filter(physical_address__exact="").count(),
+    }
+
+    total_participants = qs.count()
+
+    # ✅ Build response
     data = {
         "gender_counts": gender_counts,
         "grant_counts": grant_counts,
         "tish_counts": tish_counts,
+        "disability_counts": disability_counts,
+        "race_counts": race_counts,
+        "recovering_counts": recovering_counts,
+        "cooperative_counts": cooperative_counts,
+        "ward_counts": ward_counts,
+        "contact_counts": contact_counts,
+        "signature_counts": signature_counts,
+        "address_counts": address_counts,
+        "total_participants": total_participants,
     }
+
     return JsonResponse(data)
+
 
 def dashboard(request):
     entries = RegistryEntry.objects.all()
     return render(request, 'registry/registry_dashboard.html', {'entries': entries})
-
 
 
 def registry_view(request):
